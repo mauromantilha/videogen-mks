@@ -44,7 +44,7 @@ Prioridade MoSCoW: **M** = Must, **S** = Should, **C** = Could.
 
 | ID | P | Requisito |
 |---|---|---|
-| RF-01 | M | **Quando** um job for criado com tema, `n_cenas` (2–10), `aspect_ratio`, modelos e voz, **o sistema deve** responder `202` imediatamente e, em segundo plano, consultar o LLM (DeepSeek V3/R1) e produzir um `VideoScriptSchema` válido com `texto_narrado` PT-BR de no máximo `duracao_cena_s × 3` palavras (12 palavras para 4 s) e `prompt_video` EN contendo sujeito, ação, iluminação e câmera. **Se** a saída violar o contrato, **o sistema deve** devolver ao LLM a lista de violações e tentar reparar até 2 vezes antes de marcar o job como `failed`. Ao final, o job vai para `awaiting_approval`. |
+| RF-01 | M | **Quando** um job for criado com tema, `n_cenas` (2–10), `aspect_ratio`, modelos e voz, **o sistema deve** responder `202` imediatamente e, em segundo plano, consultar o LLM (DeepSeek: `deepseek-flash` ou `deepseek-v4-pro`) e produzir um `VideoScriptSchema` válido com `texto_narrado` PT-BR de no máximo `duracao_cena_s × 3` palavras (12 palavras para 4 s) e `prompt_video` EN contendo sujeito, ação, iluminação e câmera. **Se** a saída violar o contrato, **o sistema deve** devolver ao LLM a lista de violações e tentar reparar até 2 vezes antes de marcar o job como `failed`. Ao final, o job vai para `awaiting_approval`. |
 | RF-07 | M | **Enquanto** o job estiver em `awaiting_approval`, **o sistema deve** permitir editar `texto_narrado`, `prompt_video` e `seed` de qualquer cena; adicionar, remover e reordenar cenas; e regenerar via LLM o roteiro inteiro ou uma única cena, com instrução de feedback opcional. Toda alteração passa pelas mesmas validações do RF-01 e incrementa `script_version`. Edição manual não pode acionar LLM nem GPU. |
 | RF-08 | M | **Enquanto** o job estiver em `awaiting_approval`, **o sistema deve** calcular e exibir a estimativa de custo por cena e total (TTS + vídeo), **descontando artefatos já existentes em cache**, e o custo de LLM já incorrido. |
 | RF-09 | M | **Quando** o usuário aprovar informando `script_version`, **o sistema deve** (a) rejeitar com `409` se a versão não for a atual; (b) rejeitar com `422` se a estimativa exceder `max_budget_usd`; (c) revalidar o roteiro; (d) fixar `seed` das cenas que não a tenham; (e) congelar o roteiro e iniciar a Etapa 2. **Antes** disso nenhuma chamada de TTS/T2V é permitida. |
@@ -128,9 +128,9 @@ Multi-tenant/billing; lip-sync; trilha musical e transições (`xfade`); upload 
 
 ## 9. Questões em aberto
 
-1. **Qualidade PT-BR do TTS:** F5-TTS base é treinado majoritariamente em EN/ZH; validar *checkpoint* PT-BR disponível na API escolhida. Fish Speech 1.5 declara suporte a português — manter ambos no catálogo para A/B.
-2. **Disponibilidade real** de TTS/T2V no Fal.ai e DeepInfra (catálogos mudam): confirmar antes de implementar T-036/T-037.
-3. **Preços reais** por modelo (a tabela do documento-base é estimativa) — preencher `models.yaml`.
+1. **Qualidade PT-BR do TTS:** F5-TTS base é treinado majoritariamente em EN/ZH; validar com uma voz real. Fish Speech **não está no Replicate** (pesquisa de 2026-11-08), então hoje não há alternativa de TTS com clonagem no catálogo.
+2. ~~Disponibilidade no Fal.ai~~ **Resolvido:** Fal não tem Wan 2.1/F5-TTS/CogVideoX (só Wan 2.7); adapter adiado. Ver design/03 §9.
+3. **Preços reais** por modelo: DeepSeek conferido; Replicate parcial (F5-TTS ~US$ 0,01, CogVideoX ~US$ 0,50); Wan 2.1 ainda é estimativa. Nomes de campos exigem `scripts/replicate_schema.py` com token.
 4. Estilo visual das legendas (fonte, cores, marca) e fonte OFL a embarcar.
 5. Política de retenção de artefatos/cache (TTL, limite de disco).
 6. Autenticação multiusuário é necessária no futuro?

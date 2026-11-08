@@ -21,7 +21,7 @@ def make_request(**overrides: Any) -> JobRequest:
     data: dict[str, Any] = {
         "tema": "Seguro de vida para jovens profissionais",
         "n_cenas": 3,
-        "models": {"llm": "deepseek-chat", "tts": "f5-tts", "video": "wan-2.1-t2v-480p"},
+        "models": {"llm": "deepseek-flash", "tts": "f5-tts", "video": "wan-2.1-t2v-480p"},
         "voice_id": VOICE_ID,
     }
     return JobRequest.model_validate(data | overrides)

@@ -113,16 +113,17 @@ videogen-mks/
 │   ├── domain/     script ≤90 · script_rules ≤110 · request ≤90 · generation ≤110
 │   │               status ≤70 · job ≤110 · freeze ≤60 · progress ≤100 · cost ≤90
 │   │               hashing ≤70 · sync ≤110 · media ≤60 · render_specs ≤80 · events ≤90
+│   │               catalog ≤130 (ModelSpec, preços, limites)
 │   ├── ports/      llm · tts · video · composer · repository · cache
 │   │               events · downloader · probe · voices        (≤60 cada)
 │   ├── infra/      workspace ≤90 · job_repository ≤150 · artifact_cache ≤140
 │   │               event_bus ≤120 · event_audit ≤40 · downloader ≤130 · voice_store ≤110
 │   │               cleanup ≤90 · atomic_file ≤40 (escrita atômica compartilhada)
 │   ├── providers/  http/{client,polling,errors}.py ≤120 cada   (retry vive em core/)
-│   │               catalog/{model_spec,loader,registry}.py ≤120 cada
-│   │               deepseek/llm.py ≤130
-│   │               replicate/{client,tts,video,mapping}.py ≤130 cada
-│   │               fal/{client,tts,video}.py ≤130 · fake/{llm,tts,video}.py ≤90
+│   │               catalog/{loader,context,builders,registry}.py ≤120 cada
+│   │               deepseek/llm.py ≤130 (OpenAI-compatível; também DeepInfra)
+│   │               replicate/{client,mapping,runner,tts,video}.py ≤130 cada
+│   │               fake/{llm,tts,video,origin,media,behavior}.py ≤90 · (fal: adiado)
 │   ├── composer/   ffmpeg_runner ≤110 · probe ≤90 · loudnorm ≤110 · filters ≤150
 │   │               scene_composer ≤150 · concat ≤90 · healthcheck ≤70
 │   │               subtitles/{chunker,styles,ass_writer}.py ≤110 cada

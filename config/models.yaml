@@ -1,0 +1,92 @@
+# Catálogo de modelos (RNF-03). Trocar modelo/provedor = editar este arquivo.
+#
+# verified: false  → o modo real RECUSA o modelo até alguém conferir `fields` e fixar `version`
+#                    com o schema oficial:  python scripts/replicate_schema.py <owner>/<name>
+#                    Replicate conferido em 2026-11-08 (schemas oficiais via API).
+# fields           → campo lógico do sistema → nome do campo no provedor
+# price            → estimativas; confira a página do modelo antes de produção
+version: 1
+models:
+  # ---------------------------------------------------------------- LLM (roteirista)
+  # Fonte: api-docs.deepseek.com (2026-11-08). deepseek-chat/deepseek-reasoner não constam mais.
+  deepseek-flash:
+    kind: llm
+    provider: deepseek
+    remote_ref: deepseek-flash
+    verified: true
+    capabilities: { json_mode: true, temperature: true, thinking: disabled }
+    defaults: { max_tokens: 4096 }
+    price: { unit: per_mtok, input_usd: 0.30, output_usd: 1.20, usd: 0.003 }  # preço de pico
+    timeouts: { total_s: 120 }
+
+  deepseek-v4-pro:
+    kind: llm
+    provider: deepseek
+    remote_ref: deepseek-v4-pro
+    verified: true
+    # Thinking ligado ignora temperature. JSON + thinking não é garantido pela doc: o
+    # repair loop valida a saída de qualquer forma.
+    capabilities: { json_mode: false, temperature: false, thinking: enabled }
+    defaults: { max_tokens: 16384 }
+    price: { unit: per_mtok, input_usd: 1.32, output_usd: 3.96, usd: 0.03 }
+    timeouts: { total_s: 300 }
+
+  # ---------------------------------------------------------------- TTS (locução)
+  # Fish Speech 1.5 não foi encontrado no Replicate (2026-11-08).
+  f5-tts:
+    kind: tts
+    provider: replicate
+    remote_ref: x-lance/f5-tts
+    version: 87faf6dd7a692dd82043f662e76369cab126a2cf1937e25a9d41e0b834fd230e
+    verified: true
+    fields: { text: gen_text, ref_audio: ref_audio, ref_text: ref_text, speed: speed }
+    defaults: { remove_silence: true }
+    price: { unit: per_run, usd: 0.01 }   # página do modelo: ~US$ 0,01/execução, A100
+    concurrency: 6
+    timeouts: { total_s: 120 }
+    allowed_hosts: [replicate.delivery, "*.replicate.delivery"]
+
+  # ---------------------------------------------------------------- Vídeo (T2V)
+  wan-2.1-t2v-480p:
+    kind: t2v
+    provider: replicate
+    remote_ref: wavespeedai/wan-2.1-t2v-480p
+    version: 7677a619127ea34d1ed873fb5b77448e4b9889fbd83809b44a2c459ace99192a
+    verified: true
+    fields: { prompt: prompt, negative_prompt: negative_prompt, aspect_ratio: aspect_ratio, seed: seed }
+    defaults: { fast_mode: Balanced, sample_steps: 30, sample_guide_scale: 5 }
+    limits: { fps: 16, num_frames: 81, sizes: { "9:16": [480, 832], "16:9": [832, 480] } }
+    price: { unit: per_run, usd: 0.09 }   # estimativa do documento-base; conferir
+    concurrency: 4
+    timeouts: { total_s: 300 }
+    allowed_hosts: [replicate.delivery, "*.replicate.delivery"]
+
+  wan-2.1-t2v-720p:
+    kind: t2v
+    provider: replicate
+    remote_ref: wavespeedai/wan-2.1-t2v-720p
+    version: f5576aa30f5d363b6cfa6ff8193de59a32c0f8bee3c73cdf17df92844a8b5570
+    verified: true
+    fields: { prompt: prompt, negative_prompt: negative_prompt, aspect_ratio: aspect_ratio, seed: seed }
+    defaults: { fast_mode: Balanced, sample_steps: 30, sample_guide_scale: 5 }
+    limits: { fps: 16, num_frames: 81, sizes: { "9:16": [720, 1280], "16:9": [1280, 720] } }
+    price: { unit: per_run, usd: 0.18 }   # estimativa do documento-base; conferir
+    concurrency: 4
+    timeouts: { total_s: 300 }
+    allowed_hosts: [replicate.delivery, "*.replicate.delivery"]
+
+  # Atenção: ~US$ 0,50 e ~6 min por execução, só 720x480 (16:9), 8 fps, prompt ≤ 226 tokens.
+  # Não é a "alternativa rápida" que o documento-base supunha.
+  cogvideox-5b:
+    kind: t2v
+    provider: replicate
+    remote_ref: cuuupid/cogvideox-5b
+    version: 5b14e2c2c648efecc8d36c6353576552f8a124e690587212f8e8bb17ecda3d8c
+    verified: true
+    fields: { prompt: prompt, seed: seed }
+    defaults: { num_outputs: 1, extend_prompt: true }
+    limits: { fps: 8, num_frames: 49, sizes: { "16:9": [720, 480] } }
+    price: { unit: per_run, usd: 0.50 }
+    concurrency: 2
+    timeouts: { total_s: 900 }
+    allowed_hosts: [replicate.delivery, "*.replicate.delivery"]

@@ -136,3 +136,23 @@ parametrizado por `base_url`). TTS/T2V só se o catálogo atual os oferecer; cas
   por `resume_remote_id`, `cancel`, `ContentRejected`.
 - **Mapping:** testes puros de `tts_input`/`video_input` (snapshot do JSON enviado).
 - **Live (opt-in):** `RUN_LIVE=1`, com teto de gasto de US$ 0,50; nunca roda no CI padrão.
+
+## 9. Estado após a implementação do M3 (2026-11-08)
+
+Pesquisa nas documentações oficiais mudou partes deste design:
+
+| Tema | Como ficou | Por quê |
+|---|---|---|
+| Modelos DeepSeek | `deepseek-flash` (padrão: thinking desligado, JSON mode, temperatura) e `deepseek-v4-pro` (thinking ligado, sem temperatura). | `deepseek-chat`/`deepseek-reasoner` não constam mais na doc. Thinking mode ignora `temperature`. |
+| Conteúdo vazio do LLM | Tratado como erro retryable dentro da tentativa HTTP. | No JSON mode a API pode trocar saída inválida por espaços. |
+| Nomes dos campos | Saíram do código: `fields` no YAML (campo lógico → nome no provedor), aplicado por `replicate/mapping.py`. | Schemas do Replicate só são legíveis com token. |
+| `verified` | Modo real recusa modelo com `verified: false`; `scripts/replicate_schema.py` mostra versão e campos oficiais. | Errar um nome de campo só apareceria depois de pagar. |
+| `ModelSpec`/`ModelCatalog` | Em `domain/catalog.py` (não em `providers/`). | O `CostEstimator` (services) precisa de preços sem importar adapters. |
+| Montagem | `catalog/context.py` (credenciais + um `httpx.AsyncClient` por provedor), `catalog/builders.py` (mapa `(tipo, provedor) → fábrica`), `catalog/registry.py`. | Registry genérico; novo provedor = uma linha. |
+| Replicate | `client.py` (REST) + `runner.py` (retomada, reenvio em falha transitória `E1001/E6716/...`, cancela no timeout) + `tts.py`/`video.py` finos. | Mesma lógica de predição para TTS e vídeo. |
+| Referência de voz | Enviada como data URI (≤ 1 MB, limite da doc). | Não há API de upload documentada. **M5:** VoiceService deve gravar a referência compacta. |
+| Slugs reais | `x-lance/f5-tts` (~US$ 0,01/execução), `wavespeedai/wan-2.1-t2v-480p`/`-720p`, `cuuupid/cogvideox-5b`. | `wan-video/*` não existe. Fish Speech não está no Replicate. |
+| CogVideoX | ~US$ 0,50 e ~6 min por execução, só 720×480 (16:9), 8 fps. | Não é "alternativa rápida": fica no catálogo só como opção 16:9. |
+| Fal.ai (T-037) | **Não implementado.** | Não oferece Wan 2.1, F5-TTS nem CogVideoX; tem Wan 2.7 (outros parâmetros, US$ 0,10/s em 720p). Reavaliar se quisermos Wan 2.7. |
+| DeepInfra (T-038) | Coberto por configuração: `provider: deepinfra` + `capabilities.base_url` reutiliza o adapter OpenAI-compatível. | Mesma API de chat. |
+| Fakes | Mesma semântica de reenvio do adapter real (provado pela suíte de contrato); `FakeMediaOrigin` também implementa `Downloader` no modo fake. | Testes com fakes valem para a produção. |

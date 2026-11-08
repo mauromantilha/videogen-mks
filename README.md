@@ -31,9 +31,9 @@ Você descreve o tema ou produto, revisa o roteiro e aprova; a ferramenta narra,
 
 | Componente | Modelo principal | Alternativa | Provedores |
 |---|---|---|---|
-| Roteirista (LLM) | `deepseek-reasoner` (R1) | `deepseek-chat` (V3) | DeepSeek, DeepInfra |
-| Locução (TTS) | F5-TTS | Fish Speech 1.5 | Replicate, Fal.ai |
-| Vídeo (T2V) | Wan 2.1 | CogVideoX-5B | Replicate, Fal.ai |
+| Roteirista (LLM) | `deepseek-flash` | `deepseek-v4-pro` | DeepSeek, DeepInfra |
+| Locução (TTS) | F5-TTS | — | Replicate |
+| Vídeo (T2V) | Wan 2.1 (480p/720p) | CogVideoX-5B (só 16:9) | Replicate |
 
 - **Idempotência e economia:** artefatos endereçados por hash de conteúdo. Se uma cena falhar, a nova execução
   reaproveita tudo que já foi pago. Editar uma cena re-renderiza só ela.
