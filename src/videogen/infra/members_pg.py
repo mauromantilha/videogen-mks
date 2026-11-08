@@ -2,15 +2,18 @@
 
 O papel do app (`videogen_app`) só tem SELECT/INSERT/UPDATE nessa tabela; o schema é criado
 pelo dono do banco, nunca pelo processo da aplicação.
+
+O compute do Neon hiberna sem uso e derruba as conexões abertas (`AdminShutdown`): o pool testa a
+conexão antes de entregá-la, descarta as ociosas e a consulta é repetida uma vez se a conexão cair.
 """
 
 from typing import Any, LiteralString
 
-from psycopg import errors
+from psycopg import OperationalError, errors
 from psycopg.rows import dict_row
 from psycopg_pool import AsyncConnectionPool
 
-from videogen.core.errors import AlreadyExists, NotFound
+from videogen.core.errors import AlreadyExists, NotFound, ProviderError
 from videogen.domain.identity import Member, normalize_email
 
 SELECT_ONE = (
@@ -30,9 +33,11 @@ SET_ACTIVE = (
 
 
 class PostgresMemberDirectory:
-    def __init__(self, dsn: str, *, max_size: int = 4) -> None:
-        self._pool = AsyncConnectionPool(dsn, min_size=0, max_size=max_size, open=False,
-                                         kwargs={"autocommit": True})  # fmt: skip
+    def __init__(self, dsn: str, *, max_size: int = 4, max_idle_s: float = 60.0) -> None:
+        self._pool: Any = AsyncConnectionPool(
+            dsn, min_size=0, max_size=max_size, open=False, max_idle=max_idle_s,
+            check=AsyncConnectionPool.check_connection, kwargs={"autocommit": True},
+        )  # fmt: skip
 
     async def open(self) -> None:
         await self._pool.open(wait=False)
@@ -65,6 +70,17 @@ class PostgresMemberDirectory:
         return Member.model_validate(rows[0])
 
     async def _fetch(self, sql: LiteralString, params: tuple[Any, ...]) -> list[dict[str, Any]]:
+        for attempt in (1, 2):
+            try:
+                return await self._run(sql, params)
+            except OperationalError as exc:  # conexão derrubada (hibernação, rede)
+                if attempt == 2:  # noqa: PLR2004
+                    raise ProviderError("banco de usuários indisponível; tente de novo",
+                                        retryable=True) from exc  # fmt: skip
+        raise AssertionError("inalcançável")
+
+    async def _run(self, sql: LiteralString, params: tuple[Any, ...]) -> list[dict[str, Any]]:
         async with self._pool.connection() as conn, conn.cursor(row_factory=dict_row) as cur:
             await cur.execute(sql, params)
-            return await cur.fetchall()
+            rows: list[dict[str, Any]] = await cur.fetchall()
+            return rows
