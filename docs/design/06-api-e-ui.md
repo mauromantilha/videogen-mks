@@ -152,3 +152,17 @@ Cada ≤ 150 linhas; lógica de apresentação em filtros Jinja registrados em `
 API: `httpx.AsyncClient(transport=ASGITransport(app))` com `PROVIDER_MODE=fake`; cada rota tem teste de
 sucesso + erro mapeado; SSE testado lendo as primeiras N linhas. UI: testes de *rendering* de fragmentos
 (HTML contém contador, violação, estado) sem navegador; smoke manual com Playwright/Chrome opcional (T-099).
+
+## 9. Estado após a implementação do M6 (2026-11-08)
+
+| Tema | Como ficou |
+|---|---|
+| Fronteira API ↔ app | `api/deps.py` declara `ApiServices` (dataclass imutável tipada por ports e serviços); o container (`app/`) o preenche. Nenhuma rota importa adapter (import-linter). |
+| Composition root | `app/container_{infra,providers,services}.py` + `container.py` (`startup`: layout, parciais, toolchain, recuperação; `shutdown`: drena o runner e fecha clientes HTTP) + `readiness.py` (port `HealthCheck`). |
+| Erros | `problem+json`; o status vem de `DomainError.http_status`; contexto exposto só por lista branca; `ConfigError` ⇒ 503 `NOT_CONFIGURED`; erro inesperado ⇒ 500 sem detalhes. |
+| Edição | Respostas `200` com `violations` (aviso por cena); só erro de estrutura dá 422 (ver design/05 §8). |
+| Rotas extras | `POST …/script/scenes/{i}/reseed` ("gerar outra versão"); `DELETE …/scenes/{i}?expected_version=`. |
+| Artefatos por cena | `GET …/scenes/{i}/{audio\|video\|clip}` ⇒ `audio_norm`, `video_raw`, `clip` pelo hash do step (M7 grava esses hashes). Range via `FileResponse`. |
+| SSE | `snapshot` → replay por `Last-Event-ID` → eventos ao vivo; heartbeat 15 s; encerra em `job.status` final (`completed`/`failed`/`canceled`). |
+| Auth | `X-API-Key` ou cookie `vg_key`; sem chave configurada, só loopback. |
+| Validado | Testes HTTP contra o container real (modo fake, disco real) e smoke com `uvicorn` real percorrendo a Etapa 1. |

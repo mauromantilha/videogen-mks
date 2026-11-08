@@ -59,7 +59,7 @@ def _port_protocols() -> list[type]:
 
 def test_cada_port_tem_no_maximo_5_metodos() -> None:
     protocols = _port_protocols()
-    assert len(protocols) == 12  # + ProviderResolver, ScriptHistory (M5)
+    assert len(protocols) == 13  # + ProviderResolver, ScriptHistory (M5), HealthCheck (M6)
     for protocol in protocols:
         methods = [
             name
