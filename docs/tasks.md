@@ -94,3 +94,12 @@ AC-05/06 → T-056/T-064 · AC-07 → T-015/T-045 · AC-08 → T-002 · AC-09 �
 Executar **T-001 → T-002 → T-003**: scaffold, `check_limits.py` com seus testes e contratos
 `import-linter`. Só depois começar M1. O `main.py` solto na raiz do repositório é substituído por
 `src/videogen/main.py` em T-001.
+
+## 6. Estado em 2026-11-08
+
+| Marco | Estado |
+|---|---|
+| M0–M8 | **Concluídos** (commits no `main`, CI verde). |
+| M9 | T-090/T-091 (E2E pela API), T-092 (queda do processo), T-094 (Docker + runbook), T-096 (revisão de segurança), T-097 (paralelismo, no M7) e T-099 (UI no Chrome, no M8) **concluídos**. |
+| Aguardando autorização (geram custo) | T-093 smoke real (`tests/live`, teto US$ 0,50) e T-098 avaliação do roteiro (`scripts/eval_scripts.py --yes`). Prontos, desligados por padrão. |
+| Não feitos | T-095 métricas (C, opcional); T-037 Fal.ai (adiado: não oferece os modelos do catálogo). |

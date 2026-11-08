@@ -1,0 +1,20 @@
+# Sobe o VideoGen em http://localhost:8000.
+#   docker compose up --build          -> modo fake (custo zero) se PROVIDER_MODE não estiver definido
+#   PROVIDER_MODE=real no .env         -> provedores reais (gera custo)
+services:
+  videogen:
+    build: .
+    image: videogen-mks:local
+    ports:
+      - "8000:8000"
+    env_file:
+      - path: .env
+        required: false
+    environment:
+      PROVIDER_MODE: ${PROVIDER_MODE:-fake}
+    volumes:
+      - workspace:/workspace
+    restart: unless-stopped
+
+volumes:
+  workspace:

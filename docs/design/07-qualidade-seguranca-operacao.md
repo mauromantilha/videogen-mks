@@ -124,7 +124,8 @@ verifica `submit_count == 1` e conclusão.
 
 ## 5. Operação e deploy
 
-- **Docker** (`python:3.12-slim` + `ffmpeg` com libass + fonte): `uvicorn videogen.main:app --workers 1`.
+- **Docker** (`python:3.12-slim-trixie` — o bookworm traz FFmpeg 5.1 — + `ffmpeg` 7 com libass +
+  `fonts-dejavu-core`, usuário sem privilégios): `uvicorn videogen.main:app --workers 1`. Validado.
   Volume em `/workspace`. `HEALTHCHECK` em `/readyz`.
 - **`/readyz`** falha se: FFmpeg/libass ausente, workspace não gravável, `models.yaml` inválido ou nenhum
   provedor com credencial (exceto `PROVIDER_MODE=fake`).
