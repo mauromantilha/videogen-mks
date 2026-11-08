@@ -37,6 +37,9 @@ dev = [
 [tool.setuptools.packages.find]
 where = ["src"]
 
+[tool.setuptools.package-data]
+videogen = ["ui/templates/*.html", "ui/static/*.css", "ui/static/*.md", "ui/static/vendor/*.js"]
+
 # ---------------------------------------------------------------- ruff
 [tool.ruff]
 line-length = 100

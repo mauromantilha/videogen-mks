@@ -17,6 +17,7 @@ from videogen.api.routers import (
 from videogen.app.container import Container
 from videogen.app.lifespan import build_lifespan
 from videogen.core.config import Settings
+from videogen.ui.setup import register_ui
 
 ROUTERS = (health, jobs, script, approval, events, artifacts, voices, catalog)
 
@@ -37,4 +38,5 @@ def create_app(container: Container | None = None, *, settings: Settings | None 
     register_error_handlers(app)
     for module in ROUTERS:
         app.include_router(module.router)
+    register_ui(app)
     return app

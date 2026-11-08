@@ -1,0 +1,63 @@
+{% extends "base.html" %}
+{% block title %}Vídeos{% endblock %}
+{% block content %}
+{% set f = form or {} %}
+<section class="card">
+  <h1>Novo vídeo</h1>
+  {% if error %}<p class="alert error">{{ error }}</p>{% endif %}
+  {% if not voices %}
+  <p class="alert">Cadastre uma <a href="/voices">voz de referência</a> antes de criar um vídeo.</p>
+  {% endif %}
+  <form method="post" action="/jobs" class="grid">
+    <label class="wide">Tema ou produto
+      <textarea name="tema" rows="2" required minlength="3" maxlength="500"
+                placeholder="Ex.: Seguro de vida para jovens profissionais">{{ f.get("tema", "") }}</textarea>
+    </label>
+    <label>Proporção
+      <select name="aspect_ratio">
+        <option value="9:16">Vertical 9:16 (Reels, TikTok, Shorts)</option>
+        <option value="16:9" {% if f.get("aspect_ratio") == "16:9" %}selected{% endif %}>Horizontal 16:9</option>
+      </select>
+    </label>
+    <label>Cenas<input type="number" name="n_cenas" min="2" max="10" value="{{ f.get('n_cenas', 5) }}"></label>
+    <label>Voz
+      <select name="voice_id" required>
+        {% for voice in voices %}<option value="{{ voice.voice_id }}">{{ voice.name }} ({{ "%.0f"|format(voice.duration_s) }} s)</option>{% endfor %}
+      </select>
+    </label>
+    {% for kind, label in (("llm", "Roteirista"), ("tts", "Locução"), ("t2v", "Vídeo")) %}
+    <label>{{ label }}
+      <select name="{{ 'video' if kind == 't2v' else kind }}">
+        {% for spec in models[kind] %}<option value="{{ spec.key }}">{{ spec.key }} · ~{{ spec.price.estimate()|money }}</option>{% endfor %}
+      </select>
+    </label>
+    {% endfor %}
+    <label>Resolução
+      <select name="resolution"><option value="480p">480p</option><option value="720p">720p</option></select>
+    </label>
+    <label>Orçamento máximo (US$)<input type="number" name="max_budget_usd" min="0.01" max="100" step="0.01" value="{{ f.get('max_budget_usd', 2) }}"></label>
+    <label class="check"><input type="checkbox" name="legendas" checked> Legendas queimadas</label>
+    <div class="wide"><button type="submit" {% if not voices %}disabled{% endif %}>Gerar roteiro</button>
+      <span class="muted">Nenhum custo de GPU antes da sua aprovação.</span></div>
+  </form>
+</section>
+
+<section class="card">
+  <h2>Vídeos recentes</h2>
+  {% if jobs %}
+  <table class="list">
+    <thead><tr><th>Tema</th><th>Status</th><th>Gasto</th><th>Atualizado</th></tr></thead>
+    <tbody>
+    {% for job in jobs %}
+      <tr>
+        <td><a href="/jobs/{{ job.job_id }}">{{ job.request.tema }}</a></td>
+        <td><span class="badge {{ job.status }}">{{ job.status|status_label }}</span></td>
+        <td>{{ job.ledger.total|money }}</td>
+        <td class="muted">{{ job.updated_at|short_dt }}</td>
+      </tr>
+    {% endfor %}
+    </tbody>
+  </table>
+  {% else %}<p class="muted">Nenhum vídeo ainda.</p>{% endif %}
+</section>
+{% endblock %}

@@ -51,7 +51,9 @@ async def http_error(_: Request, error: Exception) -> JSONResponse:
     code = {401: "UNAUTHORIZED", 404: "NOT_FOUND", 405: "METHOD_NOT_ALLOWED"}.get(
         exc.status_code, "HTTP_ERROR"
     )
-    return problem(exc.status_code, code, str(exc.detail))
+    response = problem(exc.status_code, code, str(exc.detail))
+    response.headers.update(exc.headers or {})  # ex.: Location de um redirecionamento
+    return response
 
 
 async def config_error(_: Request, exc: Exception) -> JSONResponse:

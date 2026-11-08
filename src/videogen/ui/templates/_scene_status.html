@@ -1,0 +1,4 @@
+{% set count = scene.texto_narrado|words %}
+<p class="small {{ 'warn' if count > max_words else 'muted' }}">{{ count }}/{{ max_words }} palavras</p>
+{% for violation in scene_violations %}<p class="alert warn small">{{ violation.message }}</p>{% endfor %}
+{% if oob %}<input type="hidden" id="script-version" name="expected_version" value="{{ job.script_version }}" hx-swap-oob="true">{% endif %}

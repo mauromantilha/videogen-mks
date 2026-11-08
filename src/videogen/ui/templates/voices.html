@@ -1,0 +1,29 @@
+{% extends "base.html" %}
+{% block title %}Vozes{% endblock %}
+{% block content %}
+{% set f = form or {} %}
+<section class="card">
+  <h1>Vozes de referência</h1>
+  <p class="muted">Um trecho limpo de {{ limits.min_seconds|int }} a {{ limits.max_seconds|int }} s da voz a clonar,
+     com a transcrição exata do que é dito.</p>
+  {% if error %}<p class="alert error">{{ error }}</p>{% endif %}
+  <form method="post" action="/voices" enctype="multipart/form-data" class="grid">
+    <label>Nome<input name="name" required maxlength="80" value="{{ f.get('name', '') }}"></label>
+    <label>Áudio (wav, mp3, m4a, flac, ogg)<input type="file" name="audio" accept="audio/*" required></label>
+    <label class="wide">Transcrição exata
+      <textarea name="ref_text" rows="2" required maxlength="1000">{{ f.get("ref_text", "") }}</textarea>
+    </label>
+    <div class="wide"><button type="submit">Cadastrar voz</button></div>
+  </form>
+</section>
+<section class="card">
+  <h2>Cadastradas</h2>
+  {% for voice in voices %}
+  <div class="voice-row">
+    <div><strong>{{ voice.name }}</strong> <span class="muted small">{{ "%.1f"|format(voice.duration_s) }} s · {{ voice.voice_id }}</span>
+      <p class="muted small">“{{ voice.ref_text }}”</p></div>
+    <form method="post" action="/voices/{{ voice.voice_id }}/delete"><button class="secondary danger small" type="submit">Remover</button></form>
+  </div>
+  {% else %}<p class="muted">Nenhuma voz cadastrada.</p>{% endfor %}
+</section>
+{% endblock %}

@@ -14,13 +14,20 @@ HEADER_NAME = "X-API-Key"
 LOOPBACK = frozenset({"127.0.0.1", "::1", "localhost"})
 
 
-def require_auth(request: Request) -> None:
+def is_authorized(request: Request) -> bool:
     expected = get_services(request).api_key
     if expected is None:
         host = request.client.host if request.client else ""
-        if host not in LOOPBACK:
-            raise HTTPException(status.HTTP_401_UNAUTHORIZED, "configure APP_API_KEY")
-        return
+        return host in LOOPBACK
     provided = request.headers.get(HEADER_NAME) or request.cookies.get(COOKIE_NAME) or ""
-    if not secrets.compare_digest(provided.encode(), expected.encode()):
-        raise HTTPException(status.HTTP_401_UNAUTHORIZED, "chave de API inválida")
+    return key_matches(provided, expected)
+
+
+def key_matches(provided: str, expected: str) -> bool:
+    return secrets.compare_digest(provided.encode(), expected.encode())
+
+
+def require_auth(request: Request) -> None:
+    """API: 401 em problem+json. (A UI redireciona para o login — ver ui/auth.py.)"""
+    if not is_authorized(request):
+        raise HTTPException(status.HTTP_401_UNAUTHORIZED, "chave de API ausente ou inválida")

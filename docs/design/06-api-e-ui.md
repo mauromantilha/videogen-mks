@@ -166,3 +166,13 @@ sucesso + erro mapeado; SSE testado lendo as primeiras N linhas. UI: testes de *
 | SSE | `snapshot` → replay por `Last-Event-ID` → eventos ao vivo; heartbeat 15 s; encerra em `job.status` final (`completed`/`failed`/`canceled`). |
 | Auth | `X-API-Key` ou cookie `vg_key`; sem chave configurada, só loopback. |
 | Validado | Testes HTTP contra o container real (modo fake, disco real) e smoke com `uvicorn` real percorrendo a Etapa 1. |
+
+## 10. Estado após a implementação do M8 (2026-11-08)
+
+| Tema | Como ficou |
+|---|---|
+| Front-end | Jinja2 (autoescape) + HTMX 2.0.11 + extensão SSE 2.2.4 **vendorizados** em `ui/static/vendor/` (integridade SHA-512 do npm conferida; ver `ui/static/VENDOR.md`). CSS próprio (`app.css`), claro/escuro. Sem Node, sem CDN. |
+| Segurança | CSP sem `unsafe-inline`/`eval` (HTMX com `allowEval: false`), `X-Frame-Options: DENY`, cookie `HttpOnly` + `SameSite=Lax` (protege POSTs de CSRF), `next` só aceita caminho local (sem open redirect). Fragmento HTMX sem sessão recebe `HX-Redirect` para o login. |
+| Editor | Salvamento automático por campo (`input changed delay:800ms`, fila única `hx-sync`); a resposta atualiza só o contador/avisos da cena e a versão oculta (*out-of-band*). Operações estruturais e aprovação respondem `HX-Refresh`. Erros vão para a faixa `#flash`. |
+| Tempo real | `sse-connect` só em estados ativos; `job.status` recarrega a página; `scene.step`/`job.cost` atualizam o painel de progresso (throttle 400 ms). |
+| Validado no navegador (Chrome) | Login → novo vídeo → revisão → salvamento automático (contador e aviso ao vivo) → aprovação recusada com violação → correção → aprovação → progresso ao vivo por cena → recarga automática no fim → player com a legenda editada. Sem violações de CSP; o único erro de console é o fechamento intencional do SSE no estado final. |

@@ -1,0 +1,30 @@
+{% set id = job.job_id %}
+<input type="hidden" id="script-version" name="expected_version" value="{{ job.script_version }}">
+{% if job.error %}<p class="alert error">A última regeneração falhou ({{ job.error.message }}); o roteiro anterior foi mantido.</p>{% endif %}
+<div class="editor-layout">
+  <section id="editor" class="scenes">
+    <div class="card style-anchor">
+      <strong>Estilo visual comum</strong>
+      <p class="muted">{{ job.script.estilo_visual or "—" }}</p>
+    </div>
+    {% for scene in job.script.cenas %}{% include "_scene_card.html" %}{% endfor %}
+    <form class="card inline" hx-post="/ui/jobs/{{ id }}/regenerate">
+      <label class="grow">Regenerar o roteiro inteiro com a instrução
+        <input name="feedback" maxlength="500" placeholder="Ex.: tom mais jovem, mais humor">
+      </label>
+      <button type="submit" class="secondary">Regenerar tudo</button>
+    </form>
+  </section>
+  <aside class="sidebar">
+    <div class="card" hx-get="/ui/jobs/{{ id }}/estimate" hx-trigger="load, script-changed from:body delay:300ms">
+      <p class="muted">Calculando estimativa…</p>
+    </div>
+    <form class="card" hx-post="/ui/jobs/{{ id }}/approve" hx-include="#script-version">
+      <label>Orçamento máximo (US$)
+        <input type="number" name="max_budget_usd" min="0.01" max="100" step="0.01" value="{{ budget }}">
+      </label>
+      <button type="submit">Aprovar e gerar vídeo</button>
+      <p class="muted small">Só a partir daqui há custo de GPU.</p>
+    </form>
+  </aside>
+</div>

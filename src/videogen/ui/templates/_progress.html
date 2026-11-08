@@ -1,0 +1,22 @@
+<section id="progress" class="card" hx-get="/ui/jobs/{{ job.job_id }}/progress"
+         hx-trigger="sse:scene.step throttle:400ms, sse:job.cost throttle:400ms" hx-swap="outerHTML">
+  <header class="row">
+    <h2>Gerando o vídeo</h2>
+    <span class="muted">{{ job.cost.total_usd|money }} de {{ job.cost.budget_usd|money }}</span>
+  </header>
+  {% if job.status == "finalizing" %}<p class="muted">Juntando as cenas no vídeo final…</p>{% endif %}
+  <div class="scene-grid">
+    {% for scene in job.scenes %}
+    <div class="scene-tile">
+      <strong>Cena {{ scene.scene_index + 1 }}</strong>
+      {% for name, label in (("audio", "voz"), ("video", "vídeo"), ("clip", "clipe")) %}
+        {% set step = scene[name] %}
+        <span class="chip {{ 'cached' if step.cached and step.status == 'done' else step.status }}"
+              {% if step.error %}title="{{ step.error.message }}"{% endif %}>{{ label }}: {{ step.status|step_label(step.cached) }}</span>
+      {% endfor %}
+    </div>
+    {% endfor %}
+  </div>
+  <button class="secondary danger" hx-post="/ui/jobs/{{ job.job_id }}/cancel" hx-target="#flash"
+          hx-confirm="Cancelar? O que já foi gerado fica guardado.">Cancelar</button>
+</section>

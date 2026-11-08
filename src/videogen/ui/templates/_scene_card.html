@@ -1,0 +1,34 @@
+{% set i = scene.scene_index %}
+{% set last = job.script.cenas|length - 1 %}
+<article class="card scene" id="scene-{{ i }}">
+  <header class="scene-head">
+    <strong>Cena {{ i + 1 }}</strong>
+    <span class="muted small">seed {{ scene.seed if scene.seed is not none else "automática" }}</span>
+    <div class="actions" hx-include="#script-version" hx-target="#flash">
+      <button class="icon" title="Subir" {% if i == 0 %}disabled{% endif %}
+              hx-post="/ui/jobs/{{ job.job_id }}/scenes/{{ i }}/move" hx-vals='{"target": "{{ i - 1 }}"}'>↑</button>
+      <button class="icon" title="Descer" {% if i == last %}disabled{% endif %}
+              hx-post="/ui/jobs/{{ job.job_id }}/scenes/{{ i }}/move" hx-vals='{"target": "{{ i + 1 }}"}'>↓</button>
+      <button class="icon" title="Outra versão do vídeo (nova seed)" hx-post="/ui/jobs/{{ job.job_id }}/scenes/{{ i }}/reseed">⟳</button>
+      <button class="icon" title="Adicionar cena depois" hx-post="/ui/jobs/{{ job.job_id }}/scenes/{{ i }}/add-after">＋</button>
+      <button class="icon danger" title="Remover cena" hx-confirm="Remover a cena {{ i + 1 }}?"
+              hx-post="/ui/jobs/{{ job.job_id }}/scenes/{{ i }}/delete">✕</button>
+    </div>
+  </header>
+  {% for field, label, rows in (("texto_narrado", "Narração (PT-BR)", 2), ("prompt_video", "Prompt do vídeo (EN)", 3)) %}
+  <label>{{ label }}
+    <textarea name="{{ field }}" rows="{{ rows }}"
+              hx-patch="/ui/jobs/{{ job.job_id }}/scenes/{{ i }}" hx-trigger="input changed delay:800ms"
+              hx-include="#script-version" hx-target="#scene-{{ i }}-status" hx-sync="#editor:queue all">{{ scene[field] }}</textarea>
+  </label>
+  {% endfor %}
+  <div id="scene-{{ i }}-status">
+    {% set scene_violations = violations.get(i, []) %}
+    {% include "_scene_status.html" %}
+  </div>
+  <form class="inline" hx-post="/ui/jobs/{{ job.job_id }}/regenerate">
+    <input type="hidden" name="scene_index" value="{{ i }}">
+    <input name="feedback" class="grow" maxlength="500" placeholder="Instrução para regenerar só esta cena (opcional)">
+    <button type="submit" class="secondary small">Regenerar cena</button>
+  </form>
+</article>

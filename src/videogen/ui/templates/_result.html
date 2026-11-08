@@ -1,0 +1,27 @@
+{% set id = job.job_id %}
+<section class="card">
+{% if job.status == "completed" %}
+  <h2>Vídeo pronto</h2>
+  <video class="player {{ 'vertical' if job.request.aspect_ratio == '9:16' else '' }}" controls preload="metadata"
+         src="/api/v1/jobs/{{ id }}/artifacts/final"></video>
+  <p class="muted">Custo total: {{ job.cost.total_usd|money }}</p>
+  <div class="row-actions" hx-target="#flash">
+    <a class="button" href="/api/v1/jobs/{{ id }}/artifacts/final" download>Baixar MP4</a>
+    <button class="secondary" hx-post="/ui/jobs/{{ id }}/reopen">Reabrir para editar</button>
+    <button class="secondary" hx-post="/ui/jobs/{{ id }}/clone">Duplicar</button>
+  </div>
+  <p class="muted small">Ao reabrir e reaprovar, só as cenas alteradas são geradas de novo.</p>
+{% elif job.status == "failed" %}
+  <h2>Algo deu errado</h2>
+  <p class="alert error">{{ job.error.message if job.error else "Falha desconhecida." }}</p>
+  <p class="muted">O que já foi gerado está guardado: tentar de novo refaz só o que falhou.</p>
+  <div class="row-actions" hx-target="#flash">
+    <button hx-post="/ui/jobs/{{ id }}/retry">Tentar de novo</button>
+    {% if job.script %}<button class="secondary" hx-post="/ui/jobs/{{ id }}/reopen">Editar o roteiro</button>{% endif %}
+  </div>
+{% else %}
+  <h2>Cancelado</h2>
+  <div class="row-actions" hx-target="#flash"><button class="secondary" hx-post="/ui/jobs/{{ id }}/clone">Duplicar</button></div>
+{% endif %}
+</section>
+{% if job.scenes and job.status != "canceled" %}{% include "_progress.html" %}{% endif %}

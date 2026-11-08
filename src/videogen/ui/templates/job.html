@@ -1,0 +1,18 @@
+{% extends "base.html" %}
+{% block title %}{{ job.request.tema }}{% endblock %}
+{% block content %}
+<section class="job-head">
+  <div>
+    <h1>{{ job.request.tema }}</h1>
+    <p class="muted">{{ job.job_id }} · {{ job.request.aspect_ratio }} · {{ job.request.n_cenas }} cenas · roteiro v{{ job.script_version }}</p>
+  </div>
+  <div class="head-side">
+    <span class="badge {{ job.status }}">{{ job.status|status_label }}</span>
+    <span class="muted">gasto {{ job.cost.total_usd|money }}</span>
+  </div>
+</section>
+<div id="live" {% if live %}hx-ext="sse" sse-connect="/api/v1/jobs/{{ job.job_id }}/events"{% endif %}>
+  {% if live %}<span hidden hx-get="/ui/jobs/{{ job.job_id }}/refresh" hx-trigger="sse:job.status" hx-swap="none"></span>{% endif %}
+  {% include panel %}
+</div>
+{% endblock %}

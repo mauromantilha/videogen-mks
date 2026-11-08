@@ -1,0 +1,15 @@
+<h3>Estimativa</h3>
+<table class="list compact">
+  <thead><tr><th>Cena</th><th>Voz</th><th>Vídeo</th></tr></thead>
+  <tbody>
+  {% for scene in estimate.scenes %}
+    <tr {% if scene.cached %}class="muted"{% endif %}>
+      <td>{{ scene.scene_index + 1 }}{% if scene.cached %} · cache{% endif %}</td>
+      <td>{{ scene.tts_usd|money }}</td><td>{{ scene.video_usd|money }}</td>
+    </tr>
+  {% endfor %}
+  </tbody>
+</table>
+<p class="total">Total a gastar: <strong>{{ estimate.total_usd|money }}</strong></p>
+<p class="muted small">Já gasto: {{ estimate.spent_usd|money }} · orçamento padrão {{ budget|money }}</p>
+{% if estimate.total_usd > budget %}<p class="alert warn small">A estimativa passa do orçamento padrão; ajuste o valor ao aprovar.</p>{% endif %}
