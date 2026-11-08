@@ -127,6 +127,7 @@ videogen-mks/
 │   ├── composer/   ffmpeg_runner ≤110 · probe ≤90 · loudnorm ≤110 · filters ≤150
 │   │               scene_composer ≤150 · concat ≤90 · healthcheck ≤70
 │   │               subtitles/{chunker,styles,ass_writer}.py ≤110 cada
+│   │               encoding ≤40 · media_composer ≤40 (fachada do port MediaComposer)
 │   ├── services/
 │   │   ├── script/ prompts ≤150 · repair ≤110 · script_service ≤150 · edit_service ≤170
 │   │   ├── jobs/   lifecycle ≤160 · approval ≤110 · runner ≤130 · recovery ≤90

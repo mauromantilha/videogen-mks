@@ -124,3 +124,16 @@ Saída validada: `duração ≈ Σ clipes ± 1 frame`.
   estratégias; asserts por `ffprobe` (duração, codec, fps, `loudnorm` medido em −14 ± 1 LUFS) e *golden
   frames* do freeze/zoom; concat de 3 clipes; fallback de perfil divergente.
 - O CI instala FFmpeg com `libass`; os testes `ffmpeg` são obrigatórios no CI e opcionais localmente.
+
+## 8. Estado após a implementação do M4 (2026-11-08, FFmpeg 8.0.1)
+
+| Tema | Como ficou | Por quê |
+|---|---|---|
+| Escape das legendas | `{`→`(`, `}`→`)`, `\`→`/` (substituição), não `\{`. | Determinístico em qualquer versão do libass; o texto é narração, nada se perde. |
+| Fonte | `DejaVu Sans` via fontconfig; `fontsdir` é opcional. | Evita versionar binário de fonte; o Docker instala `fonts-dejavu-core`. |
+| Medição do loudnorm | Último bloco JSON com `input_i`, em qualquer posição do stderr. | O FFmpeg 8 imprime progresso depois do JSON. |
+| Enquadramento | `scale=…:force_original_aspect_ratio=increase` + `crop` antes do zoom/legenda. | A saída do modelo (ex.: 480×832) raramente bate com a resolução final; cobre o quadro sem distorcer. |
+| Perfil de codificação | `composer/encoding.py` (`EncodeSettings`), único para todos os clipes. | Pré-condição do concat com `-c:v copy`. |
+| Port | `composer/media_composer.py` (`FfmpegMediaComposer`) junta loudnorm, cena e concat. | Os serviços só veem o port `MediaComposer`. |
+| Healthcheck | Versão ≥ 6, filtros `ass`/`loudnorm`/`zoompan`/`tpad`, encoder `libx264`, `ffprobe`, `fontsdir` se configurado. | Tudo que o render usa é verificado antes do primeiro job. |
+| Validado com FFmpeg real | As 4 estratégias (duração = áudio ± 2 quadros), −14 ± 1 LUFS medido, silêncio, legenda visível, zoom no freeze, concat por cópia e fallback de perfis diferentes, comando sem shell, timeout. | `tests/integration/composer/`. |
