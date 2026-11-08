@@ -9,7 +9,7 @@ Settings é um *god object* clássico. Aqui ele é **dividido por responsabilida
 
 | Arquivo | Classe | Conteúdo |
 |---|---|---|
-| `app.py` | `AppSettings` | `APP_ENV`, `APP_API_KEY`, `WORKSPACE_DIR`, `LOG_LEVEL`, `MODELS_CONFIG` |
+| `app.py` | `AppSettings` | `APP_ENV`, `WORKSPACE_DIR`, `LOG_LEVEL`, `MODELS_CONFIG` |
 | `providers.py` | `ProviderSettings` | `DEEPSEEK_API_KEY`, `REPLICATE_API_TOKEN`, `FAL_KEY`, `DEEPINFRA_API_TOKEN` (`SecretStr`), `PROVIDER_MODE=real\|fake` |
 | `render.py` | `RenderSettings` | paralelismo, timeouts, `LOUDNESS_LUFS`, `SYNC_*`, `HTTP_MAX_ATTEMPTS`, `DEFAULT_MAX_BUDGET_USD` |
 | `loader.py` | `load_settings()` | agrega os três em `Settings` (dataclass imutável) e valida combinações |
@@ -17,7 +17,7 @@ Settings é um *god object* clássico. Aqui ele é **dividido por responsabilida
 ```dotenv
 # .env.example
 APP_ENV=dev
-APP_API_KEY=troque-por-um-segredo-longo
+AUTH_MODE=local   # neon em produção (AuthSettings: NEON_AUTH_URL, APP_PUBLIC_URL, DATABASE_URL)
 WORKSPACE_DIR=./workspace
 MODELS_CONFIG=./config/models.yaml
 PROVIDER_MODE=real                  # fake = custo zero

@@ -9,7 +9,7 @@ cuidam). Meta: função de rota ≤ 25 linhas; arquivo de router ≤ 8 endpoints
 ## 1. Convenções
 
 - Prefixo `/api/v1`; JSON; datas ISO-8601 UTC; `job_id = job_<12 hex>`.
-- Autenticação: `X-API-Key` (ou cookie HttpOnly `vg_key` na UI), `secrets.compare_digest`.
+- Autenticação: sessão por usuário (cookie HttpOnly `vg_session`, Neon Auth) — ver §7.
 - Operações longas respondem **`202`** + `Location`; o cliente acompanha por SSE ou `GET`.
 - Erros: `application/problem+json` (§5). Concorrência otimista via `script_version`/`expected_version`.
 - DTOs em `api/dto/`: reutilizam os modelos do `domain` quando idênticos (`VideoScriptSchema`) e só criam
@@ -143,9 +143,25 @@ Cada ≤ 150 linhas; lógica de apresentação em filtros Jinja registrados em `
 
 ## 7. Autenticação na UI
 
-`GET /login` (formulário da chave) → `POST /login` valida e define cookie `vg_key` (HttpOnly, SameSite=Lax,
-`Secure` fora de dev). Dependência única `require_auth` serve API e UI. Sem `APP_API_KEY`, só aceita
-`127.0.0.1` (modo dev) e loga aviso.
+**(Atualizado após o deploy: login por usuário.)** O servidor é o único cliente do Neon Auth (BFF):
+
+| Rota | O que faz |
+|---|---|
+| `POST /login` | e-mail + senha → `sign-in/email` |
+| `POST /login/code/send` → `POST /login/code` | código por e-mail (`email-otp`), sem senha |
+| `GET /password` → `POST /password/send` → `POST /password` | primeiro acesso / esqueci a senha (`email-otp/reset-password`), já entra |
+| `POST /logout` | revoga no Neon e apaga o cookie |
+| `GET/POST /members`, `POST /members/active` | admins cadastram/desativam membros (só `@AUTH_ALLOWED_DOMAIN`) |
+
+O token da sessão do Neon vai no cookie `vg_session` (HttpOnly, SameSite=Lax, Secure quando
+`APP_PUBLIC_URL` é https). `api/auth.py::current_user` valida (cache de 60 s) e exige membro ativo
+em `app.members`; `api/ownership.py` faz `JobId`/`VoiceId` resolverem só para o dono (senão 404).
+Itens sem dono (anteriores ao login) só aparecem para admins. Modo `AUTH_MODE=local`: sem login,
+só loopback, como admin local.
+
+*Magic link* do Neon descartado: o link conclui a sessão no domínio do Neon e a troca do
+`neon_auth_session_verifier` exige um cookie de desafio que o servidor não tem
+(`SESSION_CHALLENGE_COOKIE_NOT_FOUND`). O código por e-mail é o equivalente sem senha.
 
 ## 8. Testes
 
@@ -164,7 +180,7 @@ sucesso + erro mapeado; SSE testado lendo as primeiras N linhas. UI: testes de *
 | Rotas extras | `POST …/script/scenes/{i}/reseed` ("gerar outra versão"); `DELETE …/scenes/{i}?expected_version=`. |
 | Artefatos por cena | `GET …/scenes/{i}/{audio\|video\|clip}` ⇒ `audio_norm`, `video_raw`, `clip` pelo hash do step (M7 grava esses hashes). Range via `FileResponse`. |
 | SSE | `snapshot` → replay por `Last-Event-ID` → eventos ao vivo; heartbeat 15 s; encerra em `job.status` final (`completed`/`failed`/`canceled`). |
-| Auth | `X-API-Key` ou cookie `vg_key`; sem chave configurada, só loopback. |
+| Auth | (substituído pelo login por usuário — §7.) |
 | Validado | Testes HTTP contra o container real (modo fake, disco real) e smoke com `uvicorn` real percorrendo a Etapa 1. |
 
 ## 10. Estado após a implementação do M8 (2026-11-08)

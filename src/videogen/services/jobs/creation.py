@@ -5,6 +5,7 @@ antes de gravar qualquer coisa; o rascunho do roteiro vai para o JobRunner.
 from dataclasses import dataclass
 
 from videogen.core.clock import Clock
+from videogen.core.errors import NotFound
 from videogen.core.ids import new_job_id
 from videogen.domain.catalog import ModelCatalog
 from videogen.domain.events import ScriptUpdated
@@ -38,16 +39,18 @@ class JobCreationService:
         self._voices = voices
         self._clock = clock
 
-    async def create(self, request: JobRequest) -> JobState:
-        await self._validate(request)
-        state = await self._deps.repo.create(JobState.new(new_job_id(), request, self._clock.now()))
+    async def create(self, request: JobRequest, owner_id: str | None = None) -> JobState:
+        await self._validate(request, owner_id)
+        job = JobState.new(new_job_id(), request, self._clock.now(), owner_id)
+        state = await self._deps.repo.create(job)
         publish_status(self._deps.bus, state)
         self._submit_draft(state.job_id)
         return state
 
-    async def clone(self, job_id: str) -> JobState:
+    async def clone(self, job_id: str, owner_id: str | None = None) -> JobState:
+        """O clone pertence a quem clonou (o acesso ao original é checado na borda)."""
         source = await self._deps.repo.get(job_id)
-        clone = JobState.new(new_job_id(), source.request, self._clock.now())
+        clone = JobState.new(new_job_id(), source.request, self._clock.now(), owner_id)
         if source.script is None:
             state = await self._deps.repo.create(clone)
             self._submit_draft(state.job_id)
@@ -60,13 +63,15 @@ class JobCreationService:
         publish_status(self._deps.bus, state)
         return state
 
-    async def _validate(self, request: JobRequest) -> None:
+    async def _validate(self, request: JobRequest, owner_id: str | None) -> None:
         self._catalog.get(request.models.llm, "llm")
         self._catalog.get(request.models.tts, "tts")
         limits = self._catalog.get(request.models.video, "t2v").limits
         if limits is not None:
             limits.size_for(request.aspect_ratio)  # o modelo suporta a proporção?
-        await self._voices.get(request.voice_id)
+        voice = await self._voices.get(request.voice_id)
+        if owner_id is not None and voice.owner_id != owner_id:
+            raise NotFound("voz não encontrada", voice_id=request.voice_id)
 
     def _submit_draft(self, job_id: str) -> None:
         script = self._deps.script

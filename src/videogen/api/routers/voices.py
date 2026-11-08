@@ -4,10 +4,11 @@ from typing import Annotated
 
 from fastapi import APIRouter, Depends, Form, UploadFile, status
 
-from videogen.api.auth import require_auth
-from videogen.api.deps import Services, VoiceId
+from videogen.api.auth import User, require_auth
+from videogen.api.deps import Services
 from videogen.api.dto.jobs import API
 from videogen.api.dto.voices import VoiceView
+from videogen.api.ownership import VoiceId
 from videogen.services.voices import InvalidVoice, VoiceLimits
 
 router = APIRouter(prefix=API, tags=["vozes"], dependencies=[Depends(require_auth)])
@@ -20,16 +21,19 @@ async def create_voice(
     name: Annotated[str, Form(min_length=1, max_length=80)],
     ref_text: Annotated[str, Form(min_length=1, max_length=1000)],
     services: Services,
+    user: User,
 ) -> VoiceView:
     data = await _read_limited(audio, VoiceLimits().max_upload_bytes)
     voice = await services.voices.register(data, filename=audio.filename or "",
-                                           name=name, ref_text=ref_text)  # fmt: skip
+                                           name=name, ref_text=ref_text,
+                                           owner_id=user.user_id)  # fmt: skip
     return VoiceView.of(voice)
 
 
 @router.get("/voices")
-async def list_voices(services: Services) -> list[VoiceView]:
-    return [VoiceView.of(voice) for voice in await services.voice_store.list_all()]
+async def list_voices(services: Services, user: User) -> list[VoiceView]:
+    voices = await services.voice_store.list_all()
+    return [VoiceView.of(voice) for voice in voices if user.can_access(voice.owner_id)]
 
 
 @router.delete("/voices/{voice_id}", status_code=status.HTTP_204_NO_CONTENT)

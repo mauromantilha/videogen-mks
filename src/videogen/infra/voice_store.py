@@ -26,8 +26,9 @@ class FileVoiceStore:
         self._clock = clock
 
     async def save(
-        self, audio_wav: bytes, *, name: str, ref_text: str, duration_s: float
-    ) -> VoiceRef:
+        self, audio_wav: bytes, *, name: str, ref_text: str, duration_s: float,
+        owner_id: str | None = None,
+    ) -> VoiceRef:  # fmt: skip
         voice_id = new_voice_id()
         directory = self._workspace.voice_dir(voice_id)
         voice = VoiceRef(
@@ -38,6 +39,7 @@ class FileVoiceStore:
             duration_s=duration_s,
             path=directory / AUDIO_FILE,
             created_at=self._clock.now(),
+            owner_id=owner_id,
         )
         await asyncio.to_thread(write_atomic, voice.path, audio_wav)
         meta = voice.model_dump_json(indent=2).encode("utf-8")

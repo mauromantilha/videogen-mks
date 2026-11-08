@@ -1,0 +1,39 @@
+{% extends "base.html" %}
+{% block title %}Usuários{% endblock %}
+{% block content %}
+<section class="card">
+  <h1>Usuários</h1>
+  {% if error %}<p class="alert error">{{ error }}</p>{% endif %}
+  {% if not forbidden %}
+  <form method="post" action="/members" class="member-form">
+    <label>E-mail<input type="email" name="email" value="{{ form.email if form else '' }}" required></label>
+    <label>Nome<input name="name" value="{{ form.name if form else '' }}" required maxlength="120"></label>
+    <label>Papel
+      <select name="role">
+        {% for role in roles %}<option value="{{ role.value }}" {% if form and form.role == role.value %}selected{% endif %}>{{ "Administrador" if role.value == "admin" else "Membro" }}</option>{% endfor %}
+      </select>
+    </label>
+    <button type="submit">Cadastrar</button>
+  </form>
+  <p class="muted small">A pessoa entra pela primeira vez com um código enviado ao e-mail e depois pode definir a própria senha.</p>
+  <table class="list">
+    <thead><tr><th>E-mail</th><th>Nome</th><th>Papel</th><th>Situação</th><th></th></tr></thead>
+    <tbody>
+    {% for m in members %}
+      <tr>
+        <td>{{ m.email }}</td><td>{{ m.name }}</td>
+        <td>{{ "Administrador" if m.role.value == "admin" else "Membro" }}</td>
+        <td>{{ "Ativo" if m.active else "Desativado" }}</td>
+        <td>{% if m.email != user.email %}
+          <form method="post" action="/members/active">
+            <input type="hidden" name="email" value="{{ m.email }}">
+            <input type="hidden" name="active" value="{{ 'false' if m.active else 'true' }}">
+            <button class="link" type="submit">{{ "Desativar" if m.active else "Reativar" }}</button>
+          </form>{% endif %}</td>
+      </tr>
+    {% endfor %}
+    </tbody>
+  </table>
+  {% endif %}
+</section>
+{% endblock %}

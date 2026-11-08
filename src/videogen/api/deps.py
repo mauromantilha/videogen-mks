@@ -8,13 +8,14 @@ from typing import Annotated, Protocol, cast
 
 from fastapi import Depends, Path, Request
 
-from videogen.core.ids import JOB_ID_RE, VOICE_ID_RE
 from videogen.domain.catalog import ModelCatalog, ModelKind, ModelSpec
 from videogen.ports.cache import ArtifactCache
 from videogen.ports.events import EventBus
 from videogen.ports.health import HealthCheck
 from videogen.ports.repository import JobRepository
 from videogen.ports.voices import VoiceStore
+from videogen.services.auth.login import AuthService
+from videogen.services.auth.members import MemberService
 from videogen.services.jobs.approval import ApprovalService
 from videogen.services.jobs.creation import JobCreationService
 from videogen.services.jobs.lifecycle import JobControlService
@@ -42,7 +43,10 @@ class ApiServices:
     approval: ApprovalService
     voices: VoiceService
     health: HealthCheck
-    api_key: str | None
+    members: MemberService
+    auth: AuthService | None  # None = modo local (sem login, só loopback)
+    secure_cookies: bool = True
+    session_max_age_s: int = 7 * 24 * 3600
 
 
 def get_services(request: Request) -> ApiServices:
@@ -50,6 +54,4 @@ def get_services(request: Request) -> ApiServices:
 
 
 Services = Annotated[ApiServices, Depends(get_services)]
-JobId = Annotated[str, Path(pattern=JOB_ID_RE.pattern, description="job_<12 hex>")]
-VoiceId = Annotated[str, Path(pattern=VOICE_ID_RE.pattern)]
 SceneIndex = Annotated[int, Path(ge=0, lt=100)]

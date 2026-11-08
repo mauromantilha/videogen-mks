@@ -106,3 +106,5 @@ table.list.compact td, table.list.compact th { padding: .25rem .3rem; font-size:
   .job-head { flex-direction: column; }
   .head-side { align-items: flex-start; }
 }
+.member-form { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: .5rem .75rem; align-items: end; }
+nav .small { margin-left: .25rem; }

@@ -5,7 +5,7 @@ from typing import Annotated
 from fastapi import APIRouter, Depends, Query, status
 
 from videogen.api.auth import require_auth
-from videogen.api.deps import JobId, SceneIndex, Services
+from videogen.api.deps import SceneIndex, Services
 from videogen.api.dto.jobs import API, JobView
 from videogen.api.dto.script import (
     AddSceneBody,
@@ -18,6 +18,7 @@ from videogen.api.dto.script import (
     VersionedBody,
     ViolationView,
 )
+from videogen.api.ownership import JobId
 from videogen.domain.script_rules import validate_rules
 from videogen.services.script.edit_service import EditResult
 

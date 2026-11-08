@@ -4,7 +4,8 @@ from typing import Annotated
 
 from fastapi import APIRouter, Depends, Form, Request, Response
 
-from videogen.api.deps import JobId, SceneIndex, Services
+from videogen.api.deps import SceneIndex, Services
+from videogen.api.ownership import JobId
 from videogen.core.errors import DomainError
 from videogen.ui.auth import require_ui_auth
 from videogen.ui.responses import flash_error, page, refresh

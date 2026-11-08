@@ -47,3 +47,4 @@ class VoiceRef(BaseModel):
     duration_s: float = Field(gt=0)
     path: Path
     created_at: datetime
+    owner_id: str | None = None

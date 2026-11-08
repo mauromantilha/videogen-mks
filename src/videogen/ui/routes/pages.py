@@ -1,66 +1,41 @@
-"""Páginas: login, lista + novo vídeo e a página do job."""
+"""Páginas: lista + novo vídeo e a página do job (só os do usuário logado)."""
 
-from typing import Annotated, Any, get_args
+from typing import Any, get_args
 
-from fastapi import APIRouter, Depends, Form, Request, Response, status
+from fastapi import APIRouter, Depends, Request, Response, status
 from fastapi.responses import RedirectResponse
 from pydantic import ValidationError
 
-from videogen.api.auth import COOKIE_NAME, key_matches
-from videogen.api.deps import JobId, Services
+from videogen.api.deps import Services
+from videogen.api.ownership import JobId
 from videogen.core.errors import DomainError
 from videogen.domain.catalog import ModelKind
+from videogen.domain.identity import CurrentUser
 from videogen.domain.request import JobRequest
-from videogen.ui.auth import require_ui_auth, safe_next
+from videogen.ui.auth import UiUser, require_ui_auth
 from videogen.ui.responses import page
 from videogen.ui.view_model import job_context
 
 router = APIRouter(include_in_schema=False)
 Auth = [Depends(require_ui_auth)]
-COOKIE_MAX_AGE = 7 * 24 * 3600
-
-
-@router.get("/login")
-async def login_form(request: Request, next: str | None = None) -> Response:
-    return page(request, "login.html", next=safe_next(next))
-
-
-@router.post("/login")
-async def login(
-    request: Request, services: Services,
-    api_key: Annotated[str, Form()], next: Annotated[str, Form()] = "/",
-) -> Response:  # fmt: skip
-    expected = services.api_key
-    if expected is not None and not key_matches(api_key, expected):
-        return page(request, "login.html", status.HTTP_401_UNAUTHORIZED, next=safe_next(next),
-                    error="Chave inválida.")  # fmt: skip
-    response = RedirectResponse(safe_next(next), status_code=status.HTTP_303_SEE_OTHER)
-    response.set_cookie(COOKIE_NAME, api_key, max_age=COOKIE_MAX_AGE, httponly=True,
-                        samesite="lax", secure=request.url.scheme == "https")  # fmt: skip
-    return response
-
-
-@router.post("/logout")
-async def logout() -> Response:
-    response = RedirectResponse("/login", status_code=status.HTTP_303_SEE_OTHER)
-    response.delete_cookie(COOKIE_NAME)
-    return response
 
 
 @router.get("/", dependencies=Auth)
-async def index(request: Request, services: Services) -> Response:
-    return page(request, "index.html", **await _index_context(services))
+async def index(request: Request, services: Services, user: UiUser) -> Response:
+    return page(request, "index.html", **await _index_context(services, user))
 
 
 @router.post("/jobs", dependencies=Auth)
-async def create_job(request: Request, services: Services) -> Response:
+async def create_job(request: Request, services: Services, user: UiUser) -> Response:
     form = await request.form()
     try:
-        state = await services.creation.create(JobRequest.model_validate(_job_payload(form)))
+        job_request = JobRequest.model_validate(_job_payload(form))
+        state = await services.creation.create(job_request, owner_id=user.user_id)
     except (ValidationError, DomainError) as exc:
         message = exc.message if isinstance(exc, DomainError) else _first_error(exc)
+        context = await _index_context(services, user)
         return page(request, "index.html", status.HTTP_422_UNPROCESSABLE_CONTENT,
-                    error=message, form=dict(form), **await _index_context(services))  # fmt: skip
+                    error=message, form=dict(form), **context)  # fmt: skip
     return RedirectResponse(f"/jobs/{state.job_id}", status_code=status.HTTP_303_SEE_OTHER)
 
 
@@ -69,11 +44,13 @@ async def job_page(request: Request, job_id: JobId, services: Services) -> Respo
     return page(request, "job.html", **job_context(await services.repo.get(job_id)))
 
 
-async def _index_context(services: Services) -> dict[str, Any]:
+async def _index_context(services: Services, user: CurrentUser) -> dict[str, Any]:
     kinds: tuple[ModelKind, ...] = get_args(ModelKind)
+    jobs = await services.repo.list_all()
+    voices = await services.voice_store.list_all()
     return {
-        "jobs": await services.repo.list_all(),
-        "voices": await services.voice_store.list_all(),
+        "jobs": [job for job in jobs if user.can_access(job.owner_id)],
+        "voices": [voice for voice in voices if user.can_access(voice.owner_id)],
         "models": {kind: services.models.available(kind) for kind in kinds},
     }
 

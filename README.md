@@ -39,6 +39,11 @@ Com Docker (FFmpeg 7 incluso; modo fake se `PROVIDER_MODE` não estiver definido
 docker compose up --build                     # http://localhost:8000
 ```
 
+**Acesso (produção):** cada pessoa da organização entra com e-mail e senha ou com um **código
+enviado ao e-mail**; no primeiro acesso, "Definir senha" envia um código e a pessoa escolhe a senha.
+Admins cadastram colegas em **Usuários** (só e-mails `@mksseguros.com`). Cada usuário vê apenas os
+próprios vídeos e vozes. Identidade no Neon Auth; autorização (membros e papéis) na tabela `app.members`.
+
 Abra a interface, cadastre uma **voz** (3 a 12 s de áudio limpo + a transcrição exata), crie um
 vídeo, revise o roteiro e aprove. A API REST está em `/docs`.
 
@@ -49,7 +54,10 @@ Caddy existente; instalação e operação em [`deploy/vm/README.md`](deploy/vm/
 
 | Variável | Para quê |
 |---|---|
-| `APP_API_KEY` | Chave de acesso à UI/API. **Obrigatória em produção** (`APP_ENV=prod`); sem ela, só conexões locais. |
+| `AUTH_MODE` | `local` (sem login, só conexões do próprio host) ou `neon` (login por usuário). Produção exige `neon`. |
+| `NEON_AUTH_URL`, `APP_PUBLIC_URL` | URL do Neon Auth do projeto e URL pública do app (enviada como `Origin`; precisa ser domínio confiável no Neon). |
+| `DATABASE_URL` | Postgres (Neon) com a tabela `app.members` (`deploy/sql/001_members.sql`). Sem ela, membros num JSON do workspace. |
+| `AUTH_ALLOWED_DOMAIN`, `AUTH_BOOTSTRAP_ADMIN` | Domínio dos e-mails que podem ser cadastrados; e-mail que vira admin se ainda não houver nenhum. |
 | `PROVIDER_MODE` | `fake` (simulado, custo zero) ou `real`. |
 | `DEEPSEEK_API_KEY`, `REPLICATE_API_TOKEN` | Credenciais dos provedores (modo real). |
 | `MAX_PARALLEL_VIDEO`, `MAX_PARALLEL_TTS`, `MAX_PARALLEL_FFMPEG` | Paralelismo. |

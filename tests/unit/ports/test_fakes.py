@@ -5,14 +5,17 @@ from pathlib import Path
 import pytest
 from tests.fakes.builders import JOB_ID
 from tests.fakes.fake_clock import FakeClock
+from tests.fakes.identity import FakeIdentityProvider
 from tests.fakes.memory_cache import InMemoryArtifactCache
 from tests.fakes.memory_repository import InMemoryJobRepository
 from tests.fakes.recording_bus import RecordingEventBus
 
 from videogen.domain.events import JobStatusChanged
 from videogen.domain.status import JobStatus
+from videogen.infra.members_file import FileMemberDirectory
 from videogen.ports.cache import ArtifactCache
 from videogen.ports.events import EventBus
+from videogen.ports.identity import IdentityProvider, MemberDirectory, SessionVerifier
 from videogen.ports.repository import JobRepository
 
 
@@ -25,6 +28,9 @@ def test_dubles_satisfazem_os_ports(tmp_path: Path, clock: FakeClock) -> None:
     assert isinstance(InMemoryJobRepository(clock), JobRepository)
     assert isinstance(InMemoryArtifactCache(tmp_path), ArtifactCache)
     assert isinstance(RecordingEventBus(clock), EventBus)
+    identity = FakeIdentityProvider()
+    assert isinstance(identity, IdentityProvider) and isinstance(identity, SessionVerifier)
+    assert isinstance(FileMemberDirectory(tmp_path / "m.json"), MemberDirectory)
 
 
 async def test_bus_numera_e_reenvia_a_partir_do_ultimo_id(clock: FakeClock) -> None:
@@ -59,7 +65,9 @@ def _port_protocols() -> list[type]:
 
 def test_cada_port_tem_no_maximo_5_metodos() -> None:
     protocols = _port_protocols()
-    assert len(protocols) == 13  # + ProviderResolver, ScriptHistory (M5), HealthCheck (M6)
+    # + ProviderResolver, ScriptHistory (M5), HealthCheck (M6); IdentityProvider, SessionVerifier,
+    # MemberDirectory (login por usuário)
+    assert len(protocols) == 16
     for protocol in protocols:
         methods = [
             name

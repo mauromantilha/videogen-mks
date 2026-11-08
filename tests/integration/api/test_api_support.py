@@ -25,21 +25,22 @@ async def api(tmp_path: Path) -> AsyncIterator[ApiHarness]:
         yield harness
 
 
-async def test_autenticacao(api: ApiHarness) -> None:
-    client = api.client
-    assert (await client.get("/api/v1/jobs", headers={"X-API-Key": ""})).status_code == 401
-    wrong = await client.get("/api/v1/jobs", headers={"X-API-Key": "errada"})
-    assert (wrong.status_code, wrong.json()["code"]) == (401, "UNAUTHORIZED")
-    client.headers.pop("X-API-Key")
-    client.cookies.set("vg_key", "segredo-de-teste")
-    assert (await client.get("/api/v1/jobs")).status_code == 200
-    client.cookies.clear()
-    assert (await client.get("/healthz")).status_code == 200  # sondas não exigem chave
+async def test_modo_local_so_aceita_loopback(api: ApiHarness, tmp_path: Path) -> None:
+    assert (await api.client.get("/api/v1/jobs")).status_code == 200  # ASGI: 127.0.0.1
+    async with running_api(tmp_path / "remoto", client_host="203.0.113.7") as remote:
+        denied = await remote.client.get("/api/v1/jobs")
+        assert (denied.status_code, denied.json()["code"]) == (401, "UNAUTHORIZED")
+        assert (await remote.client.get("/healthz")).status_code == 200  # sondas são abertas
 
 
-async def test_sem_chave_configurada_so_aceita_loopback(tmp_path: Path) -> None:
-    async with running_api(tmp_path, api_key=None) as api:
-        assert (await api.client.get("/api/v1/jobs")).status_code == 200  # ASGI: 127.0.0.1
+async def test_api_com_login_usa_o_cookie_de_sessao(tmp_path: Path) -> None:
+    async with running_api(tmp_path, auth=True) as api:
+        assert (await api.client.get("/api/v1/jobs")).status_code == 401
+        api.client.cookies.set("vg_session", "token-inventado")
+        assert (await api.client.get("/api/v1/jobs")).status_code == 401
+        session = await api.identity.sign_in_password("admin@mksseguros.com", "senha-do-admin")
+        api.client.cookies.set("vg_session", session.token)
+        assert (await api.client.get("/api/v1/jobs")).status_code == 200
 
 
 async def test_sse_snapshot_eventos_e_fim(api: ApiHarness) -> None:

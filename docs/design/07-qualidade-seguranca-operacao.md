@@ -104,7 +104,7 @@ verifica `submit_count == 1` e conclusão.
 | Ameaça | Controle |
 |---|---|
 | Vazamento de chaves | `SecretStr`; filtro de log que redige `Authorization`, `*_KEY`, `*_TOKEN`; `.env` no `.gitignore`. |
-| Acesso não autorizado (endpoint gasta dinheiro) | `X-API-Key`/cookie; sem chave ⇒ apenas loopback; limite de jobs simultâneos e `max_budget_usd` (teto global `≤ 100`). |
+| Acesso não autorizado (endpoint gasta dinheiro) | Login por usuário + membros (`app.members`); dados isolados por `owner_id`; modo local ⇒ apenas loopback; limite de jobs simultâneos e `max_budget_usd` (teto global `≤ 100`). |
 | *Path traversal* | `job_id`/`voice_id` por regex; `Workspace` confere `resolve()` dentro da raiz; nomes de arquivo do cliente nunca usados. |
 | SSRF no download | `https` + *allowlist* de hosts por provedor, revalidada a cada redirect; tamanho máx.; sem enviar credenciais. |
 | Upload malicioso | Limite de bytes em *streaming*, extensão + `ffprobe` (codec de áudio, duração), reencode para WAV mono antes de armazenar. |

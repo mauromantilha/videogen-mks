@@ -8,8 +8,9 @@ from videogen.domain.media import VoiceRef
 @runtime_checkable
 class VoiceStore(Protocol):
     async def save(
-        self, audio_wav: bytes, *, name: str, ref_text: str, duration_s: float
-    ) -> VoiceRef:
+        self, audio_wav: bytes, *, name: str, ref_text: str, duration_s: float,
+        owner_id: str | None = None,
+    ) -> VoiceRef:  # fmt: skip
         """Recebe áudio já validado, normalizado e medido (ffprobe) pelo VoiceService."""
         ...
 

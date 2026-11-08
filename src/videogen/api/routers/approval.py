@@ -3,9 +3,10 @@
 from fastapi import APIRouter, Depends, status
 
 from videogen.api.auth import require_auth
-from videogen.api.deps import JobId, Services
+from videogen.api.deps import Services
 from videogen.api.dto.jobs import API, JobView
 from videogen.api.dto.script import ApproveBody
+from videogen.api.ownership import JobId
 from videogen.domain.cost import CostEstimate
 
 router = APIRouter(prefix=f"{API}/jobs/{{job_id}}", tags=["aprovação"],

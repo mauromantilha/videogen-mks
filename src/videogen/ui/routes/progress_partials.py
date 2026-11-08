@@ -2,9 +2,10 @@
 
 from fastapi import APIRouter, Depends, Request, Response
 
-from videogen.api.deps import JobId, Services
+from videogen.api.deps import Services
+from videogen.api.ownership import JobId
 from videogen.core.errors import DomainError
-from videogen.ui.auth import require_ui_auth
+from videogen.ui.auth import UiUser, require_ui_auth
 from videogen.ui.responses import flash_error, page, refresh
 from videogen.ui.view_model import job_context
 
@@ -51,9 +52,9 @@ async def reopen(request: Request, job_id: JobId, services: Services) -> Respons
 
 
 @router.post("/clone")
-async def clone(request: Request, job_id: JobId, services: Services) -> Response:
+async def clone(request: Request, job_id: JobId, services: Services, user: UiUser) -> Response:
     try:
-        state = await services.creation.clone(job_id)
+        state = await services.creation.clone(job_id, owner_id=user.user_id)
     except DomainError as exc:
         return flash_error(request, exc)
     return Response(status_code=204, headers={"HX-Redirect": f"/jobs/{state.job_id}"})

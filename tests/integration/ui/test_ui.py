@@ -5,7 +5,7 @@ from pathlib import Path
 
 import pytest
 
-from tests.fakes.api_app import API_KEY, ApiHarness, running_api
+from tests.fakes.api_app import ADMIN_EMAIL, ApiHarness, running_api
 from tests.fakes.builders import JOB_ID, make_job
 from tests.fakes.media_factory import make_audio
 from videogen.domain.status import JobStatus
@@ -16,13 +16,13 @@ HTMX = {"HX-Request": "true"}
 
 @pytest.fixture
 async def ui(tmp_path: Path) -> AsyncIterator[ApiHarness]:
-    async with running_api(tmp_path) as harness:
-        harness.client.headers.pop("X-API-Key")  # o navegador usa cookie, não cabeçalho
+    async with running_api(tmp_path, auth=True) as harness:
         yield harness
 
 
 async def _login(ui: ApiHarness) -> None:
-    response = await ui.client.post("/login", data={"api_key": API_KEY, "next": "/voices"})
+    credentials = {"email": ADMIN_EMAIL, "password": "senha-do-admin"}
+    response = await ui.client.post("/login", data=credentials | {"next": "/voices"})
     assert (response.status_code, response.headers["location"]) == (303, "/voices")
     cookie = response.headers["set-cookie"]
     assert "httponly" in cookie.lower() and "samesite=lax" in cookie.lower()
@@ -45,11 +45,13 @@ async def test_login_protege_paginas_e_fragmentos(ui: ApiHarness) -> None:
     assert (response.status_code, response.headers["location"]) == (303, "/login?next=/")
     fragment = await ui.client.get("/ui/jobs/job_0123456789ab/progress", headers=HTMX)
     assert fragment.headers["hx-redirect"].startswith("/login")
-    bad = await ui.client.post("/login", data={"api_key": "errada", "next": "//evil.com"})
-    assert bad.status_code == 401 and "Chave inválida" in bad.text
+    wrong = {"email": ADMIN_EMAIL, "password": "errada", "next": "//evil.com"}
+    bad = await ui.client.post("/login", data=wrong)
+    assert bad.status_code == 401 and "senha inválidos" in bad.text
     await _login(ui)
     assert (await ui.client.get("/")).status_code == 200
-    evil = await ui.client.post("/login", data={"api_key": API_KEY, "next": "//evil.com"})
+    good = {"email": ADMIN_EMAIL, "password": "senha-do-admin", "next": "//evil.com"}
+    evil = await ui.client.post("/login", data=good)
     assert evil.headers["location"] == "/"  # sem open redirect
 
 

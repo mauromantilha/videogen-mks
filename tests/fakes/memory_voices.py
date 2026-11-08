@@ -22,12 +22,13 @@ class InMemoryVoiceStore:
         self.saved: list[bytes] = []
 
     async def save(
-        self, audio_wav: bytes, *, name: str, ref_text: str, duration_s: float
-    ) -> VoiceRef:
+        self, audio_wav: bytes, *, name: str, ref_text: str, duration_s: float,
+        owner_id: str | None = None,
+    ) -> VoiceRef:  # fmt: skip
         voice_id = f"voz_{len(self.voices):012x}"
         voice = DEFAULT_VOICE.model_copy(update={
             "voice_id": voice_id, "name": name, "ref_text": ref_text, "duration_s": duration_s,
-            "sha256": hashlib.sha256(audio_wav).hexdigest()})  # fmt: skip
+            "sha256": hashlib.sha256(audio_wav).hexdigest(), "owner_id": owner_id})  # fmt: skip
         self.voices[voice_id] = voice
         self.saved.append(audio_wav)
         return voice

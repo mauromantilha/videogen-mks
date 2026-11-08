@@ -33,6 +33,7 @@ class JobState(BaseModel):
 
     job_id: str = Field(pattern=JOB_ID_RE.pattern)
     revision: int = Field(default=0, ge=0)  # concorrência otimista do manifesto
+    owner_id: str | None = None  # usuário dono (None: criado antes do login por usuário)
     status: JobStatus = JobStatus.SCRIPTING
     failed_stage: FailedStage | None = None
     request: JobRequest
@@ -47,8 +48,11 @@ class JobState(BaseModel):
     updated_at: datetime
 
     @classmethod
-    def new(cls, job_id: str, request: JobRequest, now: datetime) -> Self:
-        return cls(job_id=job_id, request=request, created_at=now, updated_at=now)
+    def new(
+        cls, job_id: str, request: JobRequest, now: datetime, owner_id: str | None = None
+    ) -> Self:
+        return cls(job_id=job_id, request=request, owner_id=owner_id, created_at=now,
+                   updated_at=now)  # fmt: skip
 
     @model_validator(mode="after")
     def _invariants(self) -> Self:

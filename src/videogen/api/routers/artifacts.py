@@ -9,8 +9,9 @@ from fastapi import APIRouter, Depends
 from fastapi.responses import FileResponse
 
 from videogen.api.auth import require_auth
-from videogen.api.deps import JobId, SceneIndex, Services
+from videogen.api.deps import SceneIndex, Services
 from videogen.api.dto.jobs import API
+from videogen.api.ownership import JobId
 from videogen.core.errors import NotFound
 from videogen.domain.media import ArtifactKind
 from videogen.ports.cache import ArtifactCache

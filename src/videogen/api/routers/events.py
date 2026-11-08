@@ -13,8 +13,9 @@ from fastapi import APIRouter, Depends, Header
 from fastapi.responses import StreamingResponse
 
 from videogen.api.auth import require_auth
-from videogen.api.deps import JobId, Services
+from videogen.api.deps import Services
 from videogen.api.dto.jobs import API, JobView
+from videogen.api.ownership import JobId
 from videogen.domain.events import Event, JobStatusChanged
 from videogen.domain.status import JobStatus
 from videogen.ports.events import EventBus

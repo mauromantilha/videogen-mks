@@ -2,25 +2,29 @@
 
 from fastapi import APIRouter, Depends, Response, status
 
-from videogen.api.auth import require_auth
-from videogen.api.deps import JobId, Services
+from videogen.api.auth import User, require_auth
+from videogen.api.deps import Services
 from videogen.api.dto.jobs import API, JobSummary, JobView
+from videogen.api.ownership import JobId
 from videogen.domain.request import JobRequest
 
 router = APIRouter(prefix=API, tags=["jobs"], dependencies=[Depends(require_auth)])
 
 
 @router.post("/jobs", status_code=status.HTTP_202_ACCEPTED)
-async def create_job(body: JobRequest, services: Services, response: Response) -> JobView:
+async def create_job(
+    body: JobRequest, services: Services, response: Response, user: User
+) -> JobView:
     """Cria o job e gera o roteiro em segundo plano (acompanhe por `links.events`)."""
-    state = await services.creation.create(body)
+    state = await services.creation.create(body, owner_id=user.user_id)
     response.headers["Location"] = f"{API}/jobs/{state.job_id}"
     return JobView.of(state)
 
 
 @router.get("/jobs")
-async def list_jobs(services: Services) -> list[JobSummary]:
-    return [JobSummary.of(job) for job in await services.repo.list_all()]
+async def list_jobs(services: Services, user: User) -> list[JobSummary]:
+    jobs = await services.repo.list_all()
+    return [JobSummary.of(job) for job in jobs if user.can_access(job.owner_id)]
 
 
 @router.get("/jobs/{job_id}")
@@ -45,7 +49,7 @@ async def reopen_job(job_id: JobId, services: Services) -> JobView:
 
 
 @router.post("/jobs/{job_id}/clone", status_code=status.HTTP_201_CREATED)
-async def clone_job(job_id: JobId, services: Services, response: Response) -> JobView:
-    state = await services.creation.clone(job_id)
+async def clone_job(job_id: JobId, services: Services, response: Response, user: User) -> JobView:
+    state = await services.creation.clone(job_id, owner_id=user.user_id)
     response.headers["Location"] = f"{API}/jobs/{state.job_id}"
     return JobView.of(state)

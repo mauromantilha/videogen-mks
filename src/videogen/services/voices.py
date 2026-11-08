@@ -41,7 +41,9 @@ class VoiceService:
         self._store, self._probe, self._composer = store, probe, composer
         self._scratch, self._limits = scratch, limits or VoiceLimits()
 
-    async def register(self, audio: bytes, *, filename: str, name: str, ref_text: str) -> VoiceRef:
+    async def register(
+        self, audio: bytes, *, filename: str, name: str, ref_text: str, owner_id: str | None = None
+    ) -> VoiceRef:
         self._check_input(audio, filename, name, ref_text)
         token = uuid.uuid4().hex
         # Nomes distintos: um upload .wav não pode coincidir com a saída convertida.
@@ -58,7 +60,11 @@ class VoiceService:
         if len(wav) > MAX_REFERENCE_BYTES:
             raise InvalidVoice("referência grande demais após a conversão; use um trecho menor")
         return await self._store.save(
-            wav, name=name.strip(), ref_text=" ".join(ref_text.split()), duration_s=duration
+            wav,
+            name=name.strip(),
+            ref_text=" ".join(ref_text.split()),
+            duration_s=duration,
+            owner_id=owner_id,
         )
 
     def _check_input(self, audio: bytes, filename: str, name: str, ref_text: str) -> None:

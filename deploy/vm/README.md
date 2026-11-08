@@ -10,7 +10,11 @@ git clone https://github.com/mauromantilha/videogen-mks ~/apps/videogen-mks
 cd ~/apps/videogen-mks
 umask 077 && cat > deploy/vm/.env <<ENV
 APP_ENV=prod
-APP_API_KEY=$(openssl rand -hex 32)
+AUTH_MODE=neon
+NEON_AUTH_URL=https://<endpoint>.neonauth.<região>.aws.neon.tech/videogen/auth
+APP_PUBLIC_URL=https://video.mksseguros.com
+DATABASE_URL=postgresql://videogen_app:<senha>@<endpoint>.<região>.aws.neon.tech/videogen?sslmode=require
+AUTH_BOOTSTRAP_ADMIN=         # e-mail do primeiro admin (só age se ainda não houver admin)
 PROVIDER_MODE=fake            # trocar para real ao configurar as chaves abaixo
 DEEPSEEK_API_KEY=
 REPLICATE_API_TOKEN=
@@ -18,6 +22,13 @@ ENV
 docker compose -f deploy/vm/docker-compose.yml up -d --build
 docker exec videogen python -c "import urllib.request as u; print(u.urlopen('http://127.0.0.1:8000/readyz').read())"
 ```
+
+## Neon (login e membros)
+
+Projeto `videogen-mks` (org `mksseguros`, AWS us-west-2 — o Neon Auth ainda não existe no Azure),
+banco `videogen`. Neon Auth: e-mail/senha e código por e-mail, **cadastro aberto desligado**,
+domínio confiável `https://video.mksseguros.com`. Tabela de membros: `deploy/sql/001_members.sql`
+(rodar como dono); o papel `videogen_app` tem só SELECT/INSERT/UPDATE em `app.members`.
 
 ## Expor em video.mksseguros.com
 

@@ -1,33 +1,50 @@
-"""Autenticação por chave (RNF-07): cabeçalho `X-API-Key` ou cookie `vg_key` (UI).
+"""Sessão por usuário (RNF-07): cookie HttpOnly `vg_session` com o token do provedor.
 
-Sem `APP_API_KEY` configurada, só aceita conexões locais (modo dev) — gerar vídeo custa dinheiro.
+Modo `local` (sem provedor): sem login, só conexões do próprio host, como um admin local.
+Modo `neon`: o token do cookie é validado no Neon Auth (com cache curto) e o e-mail precisa ser
+de um membro ativo. A UI e a API usam a mesma sessão.
 """
 
-import secrets
+from typing import Annotated
 
-from fastapi import HTTPException, Request, status
+from fastapi import Depends, HTTPException, Request, status
 
 from videogen.api.deps import get_services
+from videogen.domain.identity import LOCAL_USER, CurrentUser
 
-COOKIE_NAME = "vg_key"
-HEADER_NAME = "X-API-Key"
+SESSION_COOKIE = "vg_session"
 LOOPBACK = frozenset({"127.0.0.1", "::1", "localhost"})
+_STATE_KEY = "current_user"
+MAX_TOKEN_CHARS = 4096
 
 
-def is_authorized(request: Request) -> bool:
-    expected = get_services(request).api_key
-    if expected is None:
+async def current_user(request: Request) -> CurrentUser | None:
+    """Resolve uma vez por requisição (fica em `request.state`)."""
+    if hasattr(request.state, _STATE_KEY):
+        cached: CurrentUser | None = getattr(request.state, _STATE_KEY)
+        return cached
+    user = await _resolve(request)
+    setattr(request.state, _STATE_KEY, user)
+    return user
+
+
+async def _resolve(request: Request) -> CurrentUser | None:
+    auth = get_services(request).auth
+    if auth is None:
         host = request.client.host if request.client else ""
-        return host in LOOPBACK
-    provided = request.headers.get(HEADER_NAME) or request.cookies.get(COOKIE_NAME) or ""
-    return key_matches(provided, expected)
+        return LOCAL_USER if host in LOOPBACK else None
+    token = request.cookies.get(SESSION_COOKIE, "")
+    if not token or len(token) > MAX_TOKEN_CHARS:
+        return None
+    return await auth.resolve(token)
 
 
-def key_matches(provided: str, expected: str) -> bool:
-    return secrets.compare_digest(provided.encode(), expected.encode())
-
-
-def require_auth(request: Request) -> None:
+async def require_auth(request: Request) -> CurrentUser:
     """API: 401 em problem+json. (A UI redireciona para o login — ver ui/auth.py.)"""
-    if not is_authorized(request):
-        raise HTTPException(status.HTTP_401_UNAUTHORIZED, "chave de API ausente ou inválida")
+    user = await current_user(request)
+    if user is None:
+        raise HTTPException(status.HTTP_401_UNAUTHORIZED, "sessão ausente ou expirada")
+    return user
+
+
+User = Annotated[CurrentUser, Depends(require_auth)]

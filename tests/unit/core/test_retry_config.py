@@ -15,11 +15,16 @@ ENV_VARS = [
     "FAL_KEY",
     "DEEPINFRA_API_TOKEN",
     "APP_ENV",
-    "APP_API_KEY",
+    "AUTH_MODE",
+    "NEON_AUTH_URL",
+    "APP_PUBLIC_URL",
+    "DATABASE_URL",
     "MAX_PARALLEL_VIDEO",
     "SYNC_STRETCH_MIN",
     "SYNC_STRETCH_MAX",
 ]
+
+PROD_NEON = {"APP_ENV": "prod", "AUTH_MODE": "neon", "NEON_AUTH_URL": "https://x/auth"}
 
 
 class Flaky:
@@ -116,7 +121,14 @@ def test_le_arquivo_env_e_esconde_segredos(clean_env: pytest.MonkeyPatch, tmp_pa
 @pytest.mark.parametrize(
     ("variables", "message"),
     [
-        ({"APP_ENV": "prod"}, "APP_API_KEY"),
+        ({"APP_ENV": "prod"}, "AUTH_MODE=neon"),
+        ({"AUTH_MODE": "neon"}, "NEON_AUTH_URL"),
+        (PROD_NEON | {"APP_PUBLIC_URL": "http://inseguro"}, "APP_PUBLIC_URL"),
+        (PROD_NEON | {"APP_PUBLIC_URL": "https://video.exemplo.com"}, "DATABASE_URL"),
+        (
+            PROD_NEON | {"APP_PUBLIC_URL": "https://video.exemplo.com", "DATABASE_URL": " "},
+            "DATABASE_URL",
+        ),  # vazio no .env = não definido
         ({"MAX_PARALLEL_VIDEO": "0"}, "max_parallel_video"),
         ({"SYNC_STRETCH_MIN": "1.0", "SYNC_STRETCH_MAX": "1.0"}, "SYNC_STRETCH_MIN"),
     ],

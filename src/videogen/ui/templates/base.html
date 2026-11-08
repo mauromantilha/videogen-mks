@@ -16,6 +16,8 @@
     <nav>
       <a href="/">Vídeos</a>
       <a href="/voices">Vozes</a>
+      {% if user and user.is_admin %}<a href="/members">Usuários</a>{% endif %}
+      {% if user %}<span class="muted small">{{ user.email }}</span>{% endif %}
       <form method="post" action="/logout"><button class="link" type="submit">Sair</button></form>
     </nav>
     {% endblock %}

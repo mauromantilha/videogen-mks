@@ -2,20 +2,23 @@
 
 from collections.abc import AsyncIterator
 from contextlib import asynccontextmanager
-from dataclasses import dataclass
+from dataclasses import dataclass, field, replace
+from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any
 
 import httpx
-from pydantic import SecretStr
 
+from tests.fakes.identity import FakeIdentityProvider
 from videogen.app.container import Container, build_container
 from videogen.app.factory import create_app
 from videogen.core.config import AppSettings, ProviderSettings, RenderSettings, Settings
+from videogen.domain.identity import LOCAL_USER, Member, Role
 from videogen.providers.fake.media import sine_wav
+from videogen.services.auth.login import AuthService
 
 ROOT = Path(__file__).resolve().parents[2]
-API_KEY = "segredo-de-teste"
+ADMIN_EMAIL = "admin@mksseguros.com"
 
 
 @dataclass
@@ -23,6 +26,7 @@ class ApiHarness:
     client: httpx.AsyncClient
     container: Container
     voice_id: str
+    identity: FakeIdentityProvider = field(default_factory=FakeIdentityProvider)
 
     def job_body(self, **overrides: Any) -> dict[str, Any]:
         body: dict[str, Any] = {
@@ -40,11 +44,10 @@ class ApiHarness:
         return data
 
 
-def fake_settings(workspace: Path, api_key: str | None = API_KEY) -> Settings:
+def fake_settings(workspace: Path) -> Settings:
     return Settings(
         app=AppSettings(_env_file=None, workspace_dir=workspace,
-                        models_config=ROOT / "config/models.yaml",
-                        app_api_key=SecretStr(api_key) if api_key else None),
+                        models_config=ROOT / "config/models.yaml"),
         providers=ProviderSettings(_env_file=None, provider_mode="fake"),
         render=RenderSettings(_env_file=None),
     )  # fmt: skip
@@ -52,18 +55,38 @@ def fake_settings(workspace: Path, api_key: str | None = API_KEY) -> Settings:
 
 @asynccontextmanager
 async def running_api(
-    workspace: Path, *, api_key: str | None = API_KEY, raise_errors: bool = True
-) -> AsyncIterator[ApiHarness]:
-    container = build_container(fake_settings(workspace, api_key))
+    workspace: Path, *, auth: bool = False, raise_errors: bool = True,
+    client_host: str = "127.0.0.1",
+) -> AsyncIterator[ApiHarness]:  # fmt: skip
+    """`auth=False`: modo local (sem login, loopback). `auth=True`: login real com provedor fake;
+    a voz padrão pertence ao admin `ADMIN_EMAIL` (senha `senha-do-admin`)."""
+    identity = FakeIdentityProvider()
+    container = _with_auth(build_container(fake_settings(workspace)), identity) if auth else (
+        build_container(fake_settings(workspace)))  # fmt: skip
     await container.startup()
+    owner = LOCAL_USER.user_id
+    if auth:
+        owner = identity.add_user(ADMIN_EMAIL, "senha-do-admin").user_id
+        await container.auth.directory.add(Member(email=ADMIN_EMAIL, name="Admin",
+                                                  role=Role.ADMIN, created_at=_now()))  # fmt: skip
     voice = await container.infra.voice_store.save(
-        sine_wav(6.0), name="Padrão", ref_text="Olá, esta é a minha voz.", duration_s=6.0
-    )
-    transport = httpx.ASGITransport(create_app(container), raise_app_exceptions=raise_errors)
-    headers = {"X-API-Key": api_key} if api_key else {}
-    async with httpx.AsyncClient(transport=transport, base_url="http://test",
-                                 headers=headers) as client:  # fmt: skip
+        sine_wav(6.0), name="Padrão", ref_text="Olá, esta é a minha voz.", duration_s=6.0,
+        owner_id=owner,
+    )  # fmt: skip
+    transport = httpx.ASGITransport(create_app(container), raise_app_exceptions=raise_errors,
+                                    client=(client_host, 50000))  # fmt: skip
+    async with httpx.AsyncClient(transport=transport, base_url="http://test") as client:
         try:
-            yield ApiHarness(client=client, container=container, voice_id=voice.voice_id)
+            yield ApiHarness(client=client, container=container, voice_id=voice.voice_id,
+                             identity=identity)  # fmt: skip
         finally:
             await container.shutdown(grace_s=1)
+
+
+def _with_auth(container: Container, identity: FakeIdentityProvider) -> Container:
+    login = AuthService(identity, identity, container.auth.directory)
+    return replace(container, api=replace(container.api, auth=login, secure_cookies=False))
+
+
+def _now() -> datetime:
+    return datetime.now(UTC)

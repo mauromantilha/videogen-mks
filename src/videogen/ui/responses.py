@@ -10,6 +10,8 @@ from videogen.ui.templating import templates
 
 
 def page(request: Request, name: str, status_code: int = 200, **context: Any) -> HTMLResponse:
+    """`user` (quem está logado, se já resolvido) vai para todo template — o menu usa."""
+    context.setdefault("user", getattr(request.state, "current_user", None))
     return templates.TemplateResponse(request, name, context, status_code=status_code)
 
 

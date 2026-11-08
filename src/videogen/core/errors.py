@@ -31,6 +31,23 @@ class AlreadyExists(DomainError):
     http_status = 409
 
 
+class Unauthorized(DomainError):
+    """Sem sessão válida, credencial errada ou código expirado (mensagem nunca diz qual)."""
+
+    code = "UNAUTHORIZED"
+    http_status = 401
+
+
+class Forbidden(DomainError):
+    code = "FORBIDDEN"
+    http_status = 403
+
+
+class RateLimited(DomainError):
+    code = "RATE_LIMITED"
+    http_status = 429
+
+
 class InvalidTransition(DomainError):
     code = "INVALID_STATE"
     http_status = 409
