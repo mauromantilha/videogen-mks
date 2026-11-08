@@ -1,5 +1,7 @@
 # Design 01 — Domínio e contratos
 
+<!-- # limits: allow file-lines — catálogo de contratos; dividir se passar de 280 linhas -->
+
 > Pacotes: `domain/` e `ports/` · Tarefas: M1 (T-010…T-018) · Voltar: [design.md](../design.md)
 
 `domain/` é **puro**: sem I/O, sem *async*, apenas `pydantic` + stdlib. Tudo aqui é trivialmente testável.

@@ -1,0 +1,52 @@
+; Contratos de arquitetura (RNF-06). Detalhes: docs/design/07, §1.3.
+; "|" = camadas irmãs independentes; ":" = irmãs que podem se importar.
+
+[importlinter]
+root_package = videogen
+include_external_packages = True
+
+[importlinter:contract:camadas]
+name = Camadas (de cima para baixo)
+type = layers
+layers =
+    videogen.app
+    videogen.api : videogen.ui
+    videogen.services
+    videogen.providers | videogen.infra | videogen.composer
+    videogen.ports
+    videogen.domain
+    videogen.core
+
+[importlinter:contract:services-sem-adapters]
+name = services dependem só de ports/domain (sem adapters nem I/O)
+type = forbidden
+source_modules =
+    videogen.services
+forbidden_modules =
+    videogen.providers
+    videogen.infra
+    videogen.composer
+    httpx
+    yaml
+
+[importlinter:contract:controllers-sem-adapters]
+name = api/ui falam com services, nunca com adapters
+type = forbidden
+source_modules =
+    videogen.api
+    videogen.ui
+forbidden_modules =
+    videogen.providers
+    videogen.infra
+    videogen.composer
+
+[importlinter:contract:dominio-puro]
+name = domain e ports sem frameworks nem I/O
+type = forbidden
+source_modules =
+    videogen.domain
+    videogen.ports
+forbidden_modules =
+    fastapi
+    httpx
+    yaml

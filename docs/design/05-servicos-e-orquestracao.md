@@ -1,5 +1,7 @@
 # Design 05 — Serviços e orquestração (Etapa 1 e Etapa 2)
 
+<!-- # limits: allow file-lines — cobre as duas etapas; dividir se passar de 280 linhas -->
+
 > Pacote: `services/` · Tarefas: M5 e M7 · Voltar: [design.md](../design.md)
 
 Serviços dependem **apenas** de `ports` e `domain`. Cada classe tem uma responsabilidade; o

@@ -75,6 +75,10 @@ type = independence
 modules = videogen.providers, videogen.infra, videogen.composer
 ```
 
+O import-linter **não rastreia a stdlib**, então I/O direto (`subprocess`, `socket`, `sqlite3`,
+`urllib`, `http`, `shutil`) em `domain`, `ports` e `services` é barrado por um teste AST em
+`tests/architecture/test_layers.py`. Os nomes genéricos proibidos (§1.2) são **erro**, não meta.
+
 (`RetryPolicy` vive em `core/retry.py`, usada por `providers.http` e `infra.downloader`, o que preserva a
 independência entre adapters — ver T-024 e T-030.)
 

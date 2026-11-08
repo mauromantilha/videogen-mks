@@ -1,0 +1,31 @@
+# Hooks locais: usam as ferramentas instaladas no .venv (make install && make hooks).
+repos:
+  - repo: local
+    hooks:
+      - id: ruff
+        name: ruff check
+        entry: .venv/bin/ruff check --fix
+        language: system
+        types: [python]
+      - id: ruff-format
+        name: ruff format
+        entry: .venv/bin/ruff format
+        language: system
+        types: [python]
+      - id: check-limits
+        name: limite de 300 linhas (RNF-05)
+        entry: .venv/bin/python scripts/check_limits.py
+        language: system
+        files: \.(py|html|ya?ml|md|sh|toml|ini)$
+      - id: mypy
+        name: mypy --strict
+        entry: .venv/bin/mypy
+        language: system
+        pass_filenames: false
+        types: [python]
+      - id: import-linter
+        name: contratos de camadas
+        entry: .venv/bin/lint-imports
+        language: system
+        pass_filenames: false
+        types: [python]
