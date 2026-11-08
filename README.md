@@ -42,6 +42,9 @@ docker compose up --build                     # http://localhost:8000
 Abra a interface, cadastre uma **voz** (3 a 12 s de áudio limpo + a transcrição exata), crie um
 vídeo, revise o roteiro e aprove. A API REST está em `/docs`.
 
+**Produção:** https://video.mksseguros.com — VM OCI `mks-server` (ARM64, us-phoenix-1), atrás do
+Caddy existente; instalação e operação em [`deploy/vm/README.md`](deploy/vm/README.md).
+
 ## Configuração (`.env`)
 
 | Variável | Para quê |

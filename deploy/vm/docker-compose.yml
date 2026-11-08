@@ -1,0 +1,41 @@
+# VideoGen no mks-server (OCI us-phoenix-1, ARM64), atrás do Caddy do projeto pdf-api.
+#
+#   cd ~/apps/videogen-mks
+#   docker compose -f deploy/vm/docker-compose.yml up -d --build
+#
+# Sem portas publicadas: o Caddy (rede pdf-api_default) encaminha video.mksseguros.com
+# para "videogen:8000". Limites de CPU/memória protegem os outros serviços da VM.
+name: videogen
+
+services:
+  videogen:
+    build:
+      context: ../..
+    image: videogen-mks:vm
+    container_name: videogen
+    restart: unless-stopped
+    env_file: .env
+    environment:
+      WORKSPACE_DIR: /workspace
+      MAX_PARALLEL_JOBS: "1"
+      MAX_PARALLEL_FFMPEG: "1"
+    volumes:
+      - workspace:/workspace
+    networks:
+      edge:
+        aliases: [videogen]
+    cpus: 1.0
+    mem_limit: 2g
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+networks:
+  edge:
+    name: pdf-api_default
+    external: true
+
+volumes:
+  workspace:

@@ -1,0 +1,11 @@
+# ── VideoGen MKS (stack videogen — ~/apps/videogen-mks/deploy/vm) ──
+video.mksseguros.com {
+	encode zstd gzip
+	request_body {
+		max_size 12MB
+	}
+	reverse_proxy videogen:8000 {
+		# SSE do progresso ao vivo: repassa cada evento sem buffer
+		flush_interval -1
+	}
+}
