@@ -207,3 +207,17 @@ evento `job.completed`.
 | Download corrompido/expirado | Retry do download; se a URL expirou, `GET` na predição devolve URL nova. |
 | Crash do processo | Recovery (design/02 §9) retoma pelo `remote_id`. |
 | Falha de composição FFmpeg | `MediaError` com `stderr`; cena `failed`; áudio/vídeo brutos permanecem em cache. |
+
+## 8. Estado após a implementação do M5 (2026-11-08)
+
+| Tema | Como ficou | Por quê |
+|---|---|---|
+| Edição manual | Erro de **estrutura** ⇒ 422, nada salvo. Violação de **regra** (ex.: 13 palavras) ⇒ salva e devolvida como aviso por cena; a **aprovação** bloqueia. | Editor com salvamento automático não pode perder o que foi digitado. |
+| Ciclo de vida | Dividido em `JobCreationService` (criar, clonar) e `JobControlService` (regenerar, cancelar, retomar, reabrir, crash). | O serviço único acumulava 9 dependências. |
+| Pedidos de geração | `domain/render_plan.py` monta TTS/vídeo para a estimativa **e** para o render. | Hash da estimativa = hash do render; cena em cache custa zero nos dois. |
+| Novos ports | `ProviderResolver` (LLM/TTS/vídeo por chave; o registry o satisfaz) e `ScriptHistory` (`script/vNNNN.json`). | Serviços não importam adapters. |
+| Regeneração que falha | Volta a `awaiting_approval` com o roteiro anterior e `error` preenchido; não derruba o job. | O roteiro anterior continua válido. |
+| Regenerar uma cena | O LLM devolve o roteiro inteiro; o serviço enxerta só a cena pedida. | Mesmo parser para todos os casos; as outras cenas ficam idênticas. |
+| Reparo barato | Cercas de código, numeração, `seed` inventada e proporção são corrigidas sem nova chamada. | Erros triviais não gastam LLM. |
+| Recuperação | `scripting` sem roteiro ⇒ refaz o rascunho; com roteiro (regeneração perdida) ⇒ volta à revisão; render ⇒ reentra no render. | A instrução de regeneração não é persistida. |
+| Voz de referência | 3 a 12 s, WAV mono 24 kHz normalizado (≤ ~576 KB). | F5-TTS aceita ~30 s de referência + fala; o Replicate recebe a referência inline (≤ 1 MB). |

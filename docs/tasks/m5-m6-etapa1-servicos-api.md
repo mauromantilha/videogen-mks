@@ -37,7 +37,8 @@ Ao fim do M6 a **Etapa 1 inteira** funciona via HTTP com provedores `fake` ou re
   seed provisória gera o mesmo hash do render; `BudgetGuard` cobre limites exatos.
 
 ### T-055 — JobLifecycleService · M · dep: T-012, T-021, T-057 · cobre: RF-11
-- **Entrega:** `services/jobs/lifecycle.py` (≤ 160): `create`, `cancel`, `retry`, `reopen`, `clone`.
+- **Entrega:** `services/jobs/creation.py` (`create`, `clone`) e `services/jobs/lifecycle.py`
+  (`JobControlService`: `request_regeneration`, `cancel`, `retry`, `reopen`, `mark_crashed`).
 - **DoD:** `retry` respeita `failed_stage`; `reopen` zera `approval` e preserva cache; `clone` copia pedido+roteiro;
   transições inválidas ⇒ `InvalidTransition`.
 

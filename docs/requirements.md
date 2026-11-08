@@ -65,7 +65,7 @@ Prioridade MoSCoW: **M** = Must, **S** = Should, **C** = Could.
 
 | ID | P | Requisito |
 |---|---|---|
-| RF-12 | M | **Quando** o usuário enviar um áudio de referência, **o sistema deve** validar formato (wav/mp3/m4a/flac), tamanho (≤ 10 MB) e duração (3–30 s, configurável) via `ffprobe`, exigir `ref_text`, armazenar com hash de conteúdo e devolver um `voice_id`. |
+| RF-12 | M | **Quando** o usuário enviar um áudio de referência, **o sistema deve** validar formato (wav/mp3/m4a/flac), tamanho (≤ 10 MB) e duração (3–12 s, configurável; limite do F5-TTS e do envio inline) via `ffprobe`, exigir `ref_text`, armazenar com hash de conteúdo e devolver um `voice_id`. |
 | RF-13 | M | **O sistema deve** servir o vídeo final e *previews* de áudio/vídeo/clipe por cena, com suporte a HTTP *Range*. |
 | RF-14 | S | **O sistema deve** listar os modelos/provedores disponíveis (apenas os com credencial configurada), com limites e preço estimado. |
 | RF-15 | M | **O sistema deve** oferecer UI web (Jinja2 + HTMX, sem Node) cobrindo: criar → revisar/editar → estimar/aprovar → acompanhar → baixar. |
