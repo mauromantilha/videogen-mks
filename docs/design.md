@@ -112,7 +112,7 @@ videogen-mks/
 │   │               errors.py ≤150 · retry.py ≤110 · logging.py ≤90 · ids.py ≤40 · clock.py ≤20
 │   ├── domain/     script ≤90 · script_rules ≤110 · request ≤90 · generation ≤110
 │   │               status ≤70 · job ≤110 · freeze ≤60 · progress ≤100 · cost ≤90
-│   │               hashing ≤70 · sync ≤110 · media ≤60 · events ≤90
+│   │               hashing ≤70 · sync ≤110 · media ≤60 · render_specs ≤80 · events ≤90
 │   ├── ports/      llm · tts · video · composer · repository · cache
 │   │               events · downloader · probe · voices        (≤60 cada)
 │   ├── infra/      workspace ≤90 · job_repository ≤150 · artifact_cache ≤140
@@ -144,7 +144,7 @@ videogen-mks/
 
 | Camada | Pode importar | Não pode importar |
 |---|---|---|
-| `domain` | stdlib, `pydantic` | qualquer outra camada do projeto |
+| `domain` | stdlib, `pydantic`, `core` (erros, ids) | `ports`, `services`, adapters, `api`, `ui` |
 | `ports` | `domain` | `services`, `infra`, `providers`, `composer`, `api` |
 | `services` | `domain`, `ports`, `core` | `providers`, `infra`, `composer`, `api`, `ui`, `httpx`, `subprocess` |
 | `providers` / `infra` / `composer` | `domain`, `ports`, `core` | `services`, `api`, `ui`; e não entre si (exceto `providers.http`) |

@@ -65,7 +65,7 @@ max-returns = 6
 python_version = "3.12"
 strict = true
 mypy_path = "src"
-files = ["src", "scripts"]
+files = ["src", "scripts", "tests/fakes"]
 plugins = ["pydantic.mypy"]
 
 [tool.pydantic-mypy]
@@ -76,6 +76,7 @@ warn_required_dynamic_aliases = true
 # ---------------------------------------------------------------- pytest
 [tool.pytest.ini_options]
 testpaths = ["tests"]
+pythonpath = ["."]
 addopts = "-ra --import-mode=importlib --strict-markers"
 asyncio_mode = "auto"
 asyncio_default_fixture_loop_scope = "function"

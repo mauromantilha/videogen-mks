@@ -64,7 +64,9 @@
   `[stretch_min, stretch_max]`; `t_video == 0` levanta erro claro).
 
 ### T-016 — Eventos e mídia · S · dep: T-013 · cobre: RF-10
-- **Entrega:** `domain/events.py` (≤ 90, união discriminada), `domain/media.py` (≤ 60: `MediaInfo`, `VoiceRef`).
+- **Entrega:** `domain/events.py` (≤ 90, união discriminada), `domain/media.py` (≤ 60: `ArtifactKind`,
+  `MediaInfo`, `VoiceRef`), `domain/render_specs.py` (≤ 80: `LoudnessParams`, `ClipParams`, `ClipSpec`,
+  `ConcatParams` — os `*Params` entram no hash, os caminhos não).
 - **DoD:** serialização SSE (`id/event/data`) coberta por teste.
 
 ### T-017 — Ports · M · dep: T-011…T-016 · cobre: RNF-03, RNF-06

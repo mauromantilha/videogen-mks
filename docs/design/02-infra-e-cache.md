@@ -44,7 +44,7 @@ Os modelos (versões, preços, limites) ficam em `config/models.yaml` (design/03
 
 | Arquivo | Responsabilidade |
 |---|---|
-| `errors.py` | Hierarquia: `DomainError` → `NotFound`, `InvalidTransition`, `VersionConflict`, `ScriptValidationError`, `BudgetExceeded`, `ProviderError` (`retryable: bool`), `ProviderTimeout`, `ContentRejected`, `MediaError`. Cada uma com `code` estável e `http_status` sugerido (o mapeamento HTTP fica em `api/error_handlers.py`). |
+| `errors.py` | Hierarquia: `DomainError` → `NotFound`, `AlreadyExists`, `InvalidTransition`, `VersionConflict`, `ValidationFailed` (base do `ScriptValidationError`, que vive em `domain/script_rules.py` por carregar `RuleViolation`), `BudgetExceeded`, `ProviderError` (`retryable: bool`), `ProviderTimeout`, `ContentRejected`, `MediaError`. Cada uma com `code` estável e `http_status` sugerido (o mapeamento HTTP fica em `api/error_handlers.py`). |
 | `logging.py` | Formatter JSON stdlib; `contextvars` (`job_id`, `scene_index`, `step`); filtro que redige segredos. |
 | `retry.py` | `RetryPolicy` + `retry_async()` — backoff exponencial com *jitter*, compartilhado por providers e downloader (design/03 §1). |
 | `ids.py` | `new_job_id()` → `job_<12 hex>`; `JOB_ID_RE`; `new_voice_id()`. |
