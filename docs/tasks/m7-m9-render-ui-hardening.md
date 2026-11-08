@@ -10,7 +10,8 @@
   (e exceção); semáforo por modelo respeita `concurrency`; cancelamento libera o slot.
 
 ### T-071 — ProgressTracker · M · dep: T-013, T-021, T-023, T-054 · cobre: RF-10, RNF-10
-- **Entrega:** `services/render/progress_tracker.py` (≤ 150): `begin_render`, `step_started/_cached/_done/_failed`,
+- **Entrega:** `services/render/step_tracker.py` + `job_tracker.py` (divididos para ≤ 10 métodos públicos):
+  `begin_render`, `started/cached/done/failed`,
   `remote_id_saved/remote_id`, `fail_render`, ledger, eventos, `BudgetGuard`.
 - **DoD:** cada método = 1 `repo.update` + 1 evento; `remote_id_saved` persiste antes de qualquer `poll`;
   orçamento excedido bloqueia **novas tentativas** mas não derruba predição em voo.

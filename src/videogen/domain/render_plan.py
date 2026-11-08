@@ -53,3 +53,13 @@ def video_request(
         fps=spec.limits.fps,
         seed=effective_seed(job_id, scene),
     )
+
+
+_OUTPUT_HEIGHT = {"480p": 480, "720p": 720}
+
+
+def output_size(aspect_ratio: AspectRatio, resolution: str) -> tuple[int, int]:
+    """Resolução final do vídeo (lado menor = 480/720; dimensões pares para o H.264)."""
+    short = _OUTPUT_HEIGHT[resolution]
+    long = round(short * 16 / 9 / 2) * 2
+    return (short, long) if aspect_ratio == "9:16" else (long, short)

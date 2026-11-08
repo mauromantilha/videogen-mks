@@ -221,3 +221,17 @@ evento `job.completed`.
 | Reparo barato | Cercas de código, numeração, `seed` inventada e proporção são corrigidas sem nova chamada. | Erros triviais não gastam LLM. |
 | Recuperação | `scripting` sem roteiro ⇒ refaz o rascunho; com roteiro (regeneração perdida) ⇒ volta à revisão; render ⇒ reentra no render. | A instrução de regeneração não é persistida. |
 | Voz de referência | 3 a 12 s, WAV mono 24 kHz normalizado (≤ ~576 KB). | F5-TTS aceita ~30 s de referência + fala; o Replicate recebe a referência inline (≤ 1 MB). |
+
+## 9. Estado após a implementação do M7 (2026-11-08)
+
+| Tema | Como ficou |
+|---|---|
+| Tracker | Dividido em `StepTracker` (estado de cada etapa, `remote_id`, orçamento) e `JobTracker` (render → finalizing → completed/failed). O único `ProgressTracker` teria 12 métodos públicos. |
+| CachedStep | Só busca/produz (`PaidCall` → `Produced(path, custo, fresh)`); quem marca a etapa como `done`/`cached` é a etapa, com o hash final dela. Falha do provedor limpa o `remote_id`; falha no download o mantém; cancelamento cancela a predição remota. |
+| Hash gravado por etapa | áudio = `audio_norm` (o que a API serve e o clipe usa), vídeo = `video_raw`, clipe = `clip`. |
+| Etapas | `AudioStep` (TTS pago + loudnorm cacheado), `VideoStep`, `ClipStep` (local, sem orçamento) e `ScenePipeline` (áudio ∥ vídeo → clipe). `RenderContext` agrupa as dependências. |
+| Single-flight | Futuro compartilhado por hash: valor **e** exceção são compartilhados; quem esperava não paga de novo. |
+| Retomada no meio da concatenação | Coordenador vê `finalizing` e chama só o `Finalizer`. |
+| Resolução de saída | `domain/render_plan.output_size`: lado menor 480/720, dimensões pares. |
+| Montagem | `services/render/factory.py` (`RenderPorts`, `RenderTuning`); no container, `render = coordinator.run` alimenta aprovação, retry e recuperação. Modo fake usa `FakeMediaOrigin` como downloader. |
+| Validado | Render real (FFmpeg) com provedores fake: MP4 final 480×854; mesma narração ⇒ 1 TTS; rerender ⇒ 0 chamadas pagas; falha parcial + retry refaz só a cena; retomada por `remote_id` sem reenvio; cancelamento cancela predições; pico de paralelismo medido e limite respeitado. |

@@ -20,6 +20,8 @@ class FakeBehavior:
     latency_s: float = 0.0
     rules: list[FailureRule] = field(default_factory=list)
     max_attempts: int = 3
+    active: int = 0  # chamadas em andamento agora
+    peak: int = 0  # máximo de chamadas simultâneas observado (testes de paralelismo)
     submits: list[str] = field(default_factory=list)  # remote_ids criados, em ordem
     cancels: list[str] = field(default_factory=list)
 
@@ -30,8 +32,13 @@ class FakeBehavior:
         self.rules.append(FailureRule(marker, 1_000_000, retryable=False, content_rejected=True))
 
     async def before_run(self, content: str) -> None:
-        if self.latency_s:
-            await asyncio.sleep(self.latency_s)
+        self.active += 1
+        self.peak = max(self.peak, self.active)
+        try:
+            if self.latency_s:
+                await asyncio.sleep(self.latency_s)
+        finally:
+            self.active -= 1
         for rule in self.rules:
             if rule.marker in content and rule.times > 0:
                 rule.times -= 1
