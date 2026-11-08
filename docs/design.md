@@ -116,7 +116,8 @@ videogen-mks/
 │   ├── ports/      llm · tts · video · composer · repository · cache
 │   │               events · downloader · probe · voices        (≤60 cada)
 │   ├── infra/      workspace ≤90 · job_repository ≤150 · artifact_cache ≤140
-│   │               event_bus ≤120 · downloader ≤130 · voice_store ≤110 · cleanup ≤90
+│   │               event_bus ≤120 · event_audit ≤40 · downloader ≤130 · voice_store ≤110
+│   │               cleanup ≤90 · atomic_file ≤40 (escrita atômica compartilhada)
 │   ├── providers/  http/{client,polling,errors}.py ≤120 cada   (retry vive em core/)
 │   │               catalog/{model_spec,loader,registry}.py ≤120 cada
 │   │               deepseek/llm.py ≤130
